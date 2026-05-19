@@ -1,0 +1,10 @@
+{
+  "name": "foto-studio",
+  "version": "2.5.0",
+  "description": "Foto-Studio - System Zarządzania Studiem Fotograficznym",
+  "main": "app.py",
+  "scripts": {
+    "start": "python app.py",
+    "test": "python -m unittest discover -s tests -v"
+  }
+}

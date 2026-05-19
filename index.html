@@ -1,0 +1,3893 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#c9a84c" />
+  <link rel="manifest" href="/manifest.json" />
+  <title>Foto-Studio 2.5</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --gold: #c9a84c;
+      --gold-dim: #8a6f2e;
+      --bg: #0f0f0f;
+      --bg2: #181818;
+      --bg3: #222;
+      --bg4: #2a2a2a;
+      --border: #333;
+      --text: #e8e8e8;
+      --text-dim: #888;
+      --danger: #e05555;
+      --success: #5aab6a;
+      --radius: 10px;
+    }
+
+    body.light {
+      --bg: #f4f4f4;
+      --bg2: #ffffff;
+      --bg3: #efefef;
+      --bg4: #e4e4e4;
+      --border: #d0d0d0;
+      --text: #1a1a1a;
+      --text-dim: #666;
+      --danger: #cc3333;
+      --success: #2d8a3e;
+    }
+
+    .api-link {
+      display: inline-flex; align-items: center; gap: 5px;
+      font-size: .78rem; color: var(--gold); text-decoration: none;
+      padding: 5px 0; margin-top: 6px;
+    }
+    .api-link:hover { text-decoration: underline; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* ── Header ── */
+    header {
+      background: var(--bg2);
+      border-bottom: 1px solid var(--border);
+      padding: 0 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      height: 52px;
+      flex-shrink: 0;
+    }
+    .logo { font-size: 1.15rem; font-weight: 700; color: var(--gold); letter-spacing: .5px; }
+    .logo span { color: var(--text-dim); font-weight: 400; font-size: .85rem; margin-left: 6px; }
+    header .spacer { flex: 1; }
+    #api-status { font-size: .72rem; padding: 3px 10px; border-radius: 20px; font-weight: 600; }
+    #api-status.ok  { background: #1a3a20; color: var(--success); }
+    #api-status.err { background: #3a1a1a; color: var(--danger); }
+
+    /* ── Nav ── */
+    nav {
+      background: var(--bg2);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      overflow-x: auto;
+      scrollbar-width: none;
+      flex-shrink: 0;
+    }
+    nav::-webkit-scrollbar { display: none; }
+    .nav-btn {
+      flex: 1;
+      min-width: 80px;
+      padding: 10px 8px 8px;
+      background: none;
+      border: none;
+      border-bottom: 3px solid transparent;
+      color: var(--text-dim);
+      cursor: pointer;
+      font-size: .78rem;
+      font-weight: 600;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      transition: color .15s;
+      white-space: nowrap;
+    }
+    .nav-btn .icon { font-size: 1.2rem; }
+    .nav-btn.active { color: var(--gold); border-bottom-color: var(--gold); }
+    .nav-btn:hover:not(.active) { color: var(--text); }
+
+    /* ── Views ── */
+    main { flex: 1; overflow: hidden; position: relative; }
+    .view { position: absolute; inset: 0; overflow-y: auto; display: none; padding: 16px; }
+    .view.active { display: block; }
+
+    /* ── Cards ── */
+    .card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      margin-bottom: 12px;
+    }
+    .card-title { font-size: .8rem; font-weight: 700; color: var(--gold); text-transform: uppercase; letter-spacing: .8px; margin-bottom: 12px; }
+
+    /* ── Buttons ── */
+    .btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 8px 16px; border-radius: 8px; border: none;
+      font-size: .85rem; font-weight: 600; cursor: pointer;
+      transition: opacity .15s, transform .1s;
+    }
+    .btn:active { transform: scale(.97); }
+    .btn-primary { background: var(--gold); color: #0f0f0f; }
+    .btn-primary:hover { opacity: .88; }
+    .btn-ghost { background: var(--bg3); color: var(--text); border: 1px solid var(--border); }
+    .btn-ghost:hover { background: var(--bg4); }
+    .btn-danger { background: #3a1a1a; color: var(--danger); border: 1px solid #5a2a2a; }
+    .btn-danger:hover { background: #4a1a1a; }
+    .btn-sm { padding: 5px 10px; font-size: .78rem; }
+
+    /* ── Forms ── */
+    .field { margin-bottom: 12px; }
+    .field label { display: block; font-size: .78rem; color: var(--text-dim); margin-bottom: 4px; font-weight: 600; }
+    input, textarea, select {
+      width: 100%; padding: 9px 12px;
+      background: var(--bg3); border: 1px solid var(--border);
+      border-radius: 8px; color: var(--text); font-size: .9rem;
+      font-family: inherit; outline: none; transition: border-color .15s;
+    }
+    input:focus, textarea:focus, select:focus { border-color: var(--gold); }
+    textarea { resize: vertical; min-height: 80px; }
+    select option { background: var(--bg3); }
+
+    /* ── Chat ── */
+    #chat-view { display: none; flex-direction: column; padding: 0; }
+    #chat-view.active { display: flex; }
+
+    #chat-messages {
+      flex: 1; overflow-y: auto; padding: 16px;
+      display: flex; flex-direction: column; gap: 12px;
+    }
+    .msg {
+      max-width: 80%; padding: 10px 14px;
+      border-radius: 14px; font-size: .88rem; line-height: 1.55;
+      white-space: pre-wrap; word-break: break-word;
+    }
+    .msg.user { align-self: flex-end; background: var(--gold); color: #0f0f0f; border-bottom-right-radius: 4px; }
+    .msg.assistant { align-self: flex-start; background: var(--bg3); border: 1px solid var(--border); border-bottom-left-radius: 4px; }
+    .msg.system-msg { align-self: center; background: none; color: var(--text-dim); font-size: .78rem; font-style: italic; }
+    .msg.error { background: #3a1a1a; color: var(--danger); border: 1px solid #5a2a2a; align-self: flex-start; }
+    .msg.billing-error {
+      align-self: flex-start; max-width: 92%;
+      background: #2a1500; border: 1px solid #8a4a00;
+      border-radius: 14px; border-bottom-left-radius: 4px;
+      padding: 14px 16px;
+    }
+    .msg.billing-error .be-title { font-size: .92rem; font-weight: 700; color: #f0a030; margin-bottom: 6px; }
+    .msg.billing-error .be-body  { font-size: .83rem; color: #d4a060; line-height: 1.55; margin-bottom: 12px; }
+    .msg.billing-error .be-link  {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: #f0a030; color: #1a0a00; font-weight: 700;
+      font-size: .82rem; padding: 7px 14px; border-radius: 8px;
+      text-decoration: none; transition: opacity .15s;
+    }
+    .msg.billing-error .be-link:hover { opacity: .85; }
+
+    .typing-indicator { align-self: flex-start; background: var(--bg3); border: 1px solid var(--border); border-radius: 14px; border-bottom-left-radius: 4px; padding: 12px 16px; display: none; }
+    .typing-dots { display: flex; gap: 4px; }
+    .typing-dots span { width: 7px; height: 7px; background: var(--text-dim); border-radius: 50%; animation: bounce 1.2s infinite; }
+    .typing-dots span:nth-child(2) { animation-delay: .2s; }
+    .typing-dots span:nth-child(3) { animation-delay: .4s; }
+    @keyframes bounce { 0%,80%,100%{ transform: translateY(0) } 40%{ transform: translateY(-6px) } }
+
+    #chat-input-area {
+      border-top: 1px solid var(--border);
+      padding: 12px 16px;
+      display: flex; gap: 8px; align-items: flex-end;
+      background: var(--bg2);
+    }
+    #chat-input {
+      flex: 1; min-height: 40px; max-height: 140px;
+      resize: none; border-radius: 10px;
+      padding: 10px 12px; font-size: .9rem;
+    }
+    #chat-send {
+      flex-shrink: 0; width: 40px; height: 40px;
+      border-radius: 10px; background: var(--gold);
+      border: none; color: #0f0f0f; font-size: 1.1rem;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      transition: opacity .15s;
+    }
+    #chat-send:hover { opacity: .85; }
+    #chat-send:disabled { opacity: .4; cursor: default; }
+
+    .chat-header {
+      padding: 10px 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 8px;
+      background: var(--bg2); flex-shrink: 0;
+    }
+    .chat-header .title { font-size: .85rem; font-weight: 700; flex: 1; }
+    .persona-select { max-width: 180px; font-size: .78rem; padding: 5px 8px; }
+
+    /* ── Sessions ── */
+    .session-card {
+      background: var(--bg2); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 14px 16px;
+      margin-bottom: 10px; cursor: pointer;
+      transition: border-color .15s;
+    }
+    .session-card:hover { border-color: var(--gold-dim); }
+    .session-card .s-head { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+    .session-card .s-name { font-weight: 700; font-size: .95rem; flex: 1; }
+    .session-card .s-type { font-size: .72rem; padding: 2px 8px; border-radius: 20px; font-weight: 600; background: var(--bg4); color: var(--text-dim); }
+    .session-card .s-meta { font-size: .78rem; color: var(--text-dim); display: flex; gap: 16px; flex-wrap: wrap; }
+    .badge { display: inline-block; font-size: .68rem; padding: 2px 7px; border-radius: 20px; font-weight: 700; }
+    .badge-gold { background: #2a2010; color: var(--gold); }
+    .badge-green { background: #1a3020; color: var(--success); }
+    .badge-red { background: #3a1a1a; color: var(--danger); }
+
+    .fab {
+      position: fixed; bottom: 80px; right: 16px;
+      width: 52px; height: 52px; border-radius: 50%;
+      background: var(--gold); color: #0f0f0f;
+      border: none; font-size: 1.5rem; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 4px 16px rgba(201,168,76,.35);
+      transition: transform .15s, opacity .15s; z-index: 10;
+    }
+    .fab:hover { transform: scale(1.08); }
+
+    /* ── Modal ── */
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,.75);
+      display: flex; align-items: flex-end; justify-content: center;
+      z-index: 100; opacity: 0; pointer-events: none;
+      transition: opacity .2s;
+    }
+    .modal-overlay.open { opacity: 1; pointer-events: all; }
+    .modal {
+      background: var(--bg2); border: 1px solid var(--border);
+      border-radius: 16px 16px 0 0; width: 100%; max-width: 600px;
+      padding: 20px; max-height: 85dvh; overflow-y: auto;
+      transform: translateY(20px); transition: transform .2s;
+    }
+    .modal-overlay.open .modal { transform: translateY(0); }
+    .modal-title { font-size: 1rem; font-weight: 700; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+    .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
+
+    /* ── Equipment ── */
+    .equip-group { margin-bottom: 16px; }
+    .equip-group-title { font-size: .75rem; font-weight: 700; color: var(--gold); text-transform: uppercase; letter-spacing: .8px; margin-bottom: 8px; }
+    .equip-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 9px 12px; background: var(--bg3);
+      border-radius: 8px; margin-bottom: 6px;
+      border: 1px solid var(--border);
+    }
+    .equip-item input[type=checkbox] { width: 18px; height: 18px; accent-color: var(--gold); cursor: pointer; flex-shrink: 0; }
+    .equip-item label { flex: 1; font-size: .88rem; cursor: pointer; }
+    .equip-item.checked label { text-decoration: line-through; color: var(--text-dim); }
+    .equip-item .remove-btn { background: none; border: none; color: var(--text-dim); cursor: pointer; font-size: 1rem; padding: 2px 6px; border-radius: 4px; }
+    .equip-item .remove-btn:hover { color: var(--danger); }
+
+    .equip-controls { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+    .equip-progress { height: 6px; background: var(--bg4); border-radius: 3px; overflow: hidden; margin-bottom: 4px; }
+    .equip-progress-bar { height: 100%; background: var(--gold); border-radius: 3px; transition: width .3s; }
+    .equip-progress-label { font-size: .75rem; color: var(--text-dim); margin-bottom: 12px; }
+
+    /* ── Dashboard ── */
+    .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+    .stat-card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; }
+    .stat-card .val { font-size: 1.6rem; font-weight: 700; color: var(--gold); }
+    .stat-card .lbl { font-size: .75rem; color: var(--text-dim); margin-top: 2px; }
+
+    .tip-card { background: linear-gradient(135deg, #1a1500, #1a1200); border: 1px solid var(--gold-dim); border-radius: var(--radius); padding: 14px; margin-bottom: 12px; }
+    .tip-card .tip-label { font-size: .7rem; font-weight: 700; color: var(--gold); text-transform: uppercase; letter-spacing: .8px; margin-bottom: 6px; }
+    .tip-card .tip-text { font-size: .85rem; line-height: 1.5; color: var(--text); }
+
+    /* ── Settings ── */
+    .setting-row { padding: 14px 0; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 12px; }
+    .setting-row:last-child { border-bottom: none; }
+    .setting-info { flex: 1; }
+    .setting-info .s-title { font-size: .88rem; font-weight: 600; }
+    .setting-info .s-desc { font-size: .75rem; color: var(--text-dim); margin-top: 2px; }
+    .toggle { position: relative; width: 44px; height: 24px; flex-shrink: 0; }
+    .toggle input { opacity: 0; width: 0; height: 0; }
+    .toggle-slider {
+      position: absolute; inset: 0; background: var(--bg4);
+      border-radius: 12px; cursor: pointer; transition: background .2s;
+    }
+    .toggle-slider::after {
+      content: ''; position: absolute; left: 3px; top: 3px;
+      width: 18px; height: 18px; background: white;
+      border-radius: 50%; transition: transform .2s;
+    }
+    .toggle input:checked + .toggle-slider { background: var(--gold); }
+    .toggle input:checked + .toggle-slider::after { transform: translateX(20px); }
+
+    /* ── Contract ── */
+    .contract-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    @media(max-width:520px) { .contract-grid { grid-template-columns: 1fr; } }
+    .contract-section-title {
+      font-size: .7rem; font-weight: 700; color: var(--gold);
+      text-transform: uppercase; letter-spacing: .8px;
+      margin: 18px 0 10px; padding-bottom: 6px;
+      border-bottom: 1px solid var(--border);
+    }
+    .contract-section-title:first-child { margin-top: 0; }
+
+    /* Preview modal */
+    #contract-preview-modal .modal { max-width: 720px; border-radius: 12px 12px 0 0; }
+    @media(min-width:600px) { #contract-preview-modal .modal { border-radius: 12px; } }
+
+    /* Printed / preview document */
+    .contract-doc {
+      font-family: 'Georgia', serif;
+      font-size: .88rem; line-height: 1.7;
+      color: #111;
+      background: #fff;
+      padding: 32px 36px;
+      border-radius: 8px;
+    }
+    .contract-doc h1 { font-size: 1.15rem; text-align: center; margin-bottom: 4px; letter-spacing: .5px; }
+    .contract-doc .doc-subtitle { text-align: center; font-size: .8rem; color: #555; margin-bottom: 24px; }
+    .contract-doc h2 { font-size: .9rem; font-weight: 700; margin: 20px 0 6px; text-transform: uppercase; letter-spacing: .5px; border-bottom: 1px solid #ccc; padding-bottom: 4px; }
+    .contract-doc p { margin-bottom: 8px; }
+    .contract-doc .doc-row { display: flex; gap: 8px; margin-bottom: 6px; }
+    .contract-doc .doc-label { min-width: 160px; font-weight: 700; flex-shrink: 0; }
+    .contract-doc .doc-val { border-bottom: 1px solid #aaa; flex: 1; min-width: 60px; }
+    .contract-doc .sig-row { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 48px; }
+    .contract-doc .sig-box { border-top: 1px solid #888; padding-top: 6px; font-size: .78rem; color: #555; text-align: center; }
+    .contract-doc ol { padding-left: 18px; margin-bottom: 8px; }
+    .contract-doc ol li { margin-bottom: 4px; }
+
+    /* Print styles */
+    @media print {
+      body > * { display: none !important; }
+      #print-area { display: block !important; position: fixed; inset: 0; background: white; z-index: 9999; padding: 0; }
+      .contract-doc { padding: 24px 32px; box-shadow: none; border-radius: 0; }
+    }
+    #print-area { display: none; }
+
+    /* ── Calendar Widget ── */
+    .date-wrap { position: relative; display: flex; gap: 6px; }
+    .date-wrap input[type=date] { flex: 1; }
+    .cal-btn {
+      flex-shrink: 0; width: 38px; height: 38px; border-radius: 8px;
+      background: var(--bg4); border: 1px solid var(--border);
+      color: var(--gold); cursor: pointer; font-size: 1rem;
+      display: flex; align-items: center; justify-content: center;
+      transition: background .15s;
+    }
+    .cal-btn:hover { background: var(--bg3); }
+    .cal-popup {
+      position: absolute; top: calc(100% + 6px); left: 0; z-index: 200;
+      background: var(--bg2); border: 1px solid var(--gold-dim);
+      border-radius: 12px; padding: 12px; width: 260px;
+      box-shadow: 0 8px 32px rgba(0,0,0,.6);
+      display: none;
+    }
+    .cal-popup.open { display: block; }
+    .cal-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+    .cal-nav button { background: none; border: none; color: var(--text); cursor: pointer; font-size: 1.1rem; padding: 2px 8px; border-radius: 6px; }
+    .cal-nav button:hover { background: var(--bg4); }
+    .cal-month-label { font-size: .85rem; font-weight: 700; color: var(--gold); }
+    .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+    .cal-day-hdr { font-size: .68rem; color: var(--text-dim); text-align: center; padding: 3px 0; font-weight: 700; }
+    .cal-day {
+      font-size: .78rem; text-align: center; padding: 5px 2px;
+      border-radius: 6px; cursor: pointer; transition: background .1s;
+    }
+    .cal-day:hover { background: var(--bg4); }
+    .cal-day.today { color: var(--gold); font-weight: 700; }
+    .cal-day.selected { background: var(--gold); color: #0f0f0f; font-weight: 700; }
+    .cal-day.other-month { color: var(--text-dim); opacity: .4; }
+    .cal-day.has-session::after { content: '•'; display: block; font-size: .5rem; color: var(--gold); margin-top: -4px; line-height: 1; }
+    .cal-day.selected.has-session::after { color: #0f0f0f; }
+
+    /* ── Cennik strukturalny ── */
+    .package-item {
+      background: var(--bg3); border: 1px solid var(--border);
+      border-radius: 8px; padding: 12px; margin-bottom: 8px;
+    }
+    .package-head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+    .package-head input[type=text] { flex: 1; font-weight: 700; }
+    .package-price { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
+    .package-price input { flex: 1; }
+    .package-price span { color: var(--text-dim); font-size: .85rem; white-space: nowrap; }
+
+    /* ── Profile / Zasady ── */
+    .zasada-item {
+      background: var(--bg3); border: 1px solid var(--border);
+      border-radius: 8px; margin-bottom: 8px; overflow: hidden;
+      transition: border-color .15s;
+    }
+    .zasada-item.active { border-color: var(--gold-dim); }
+    .zasada-header {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 12px; cursor: pointer;
+    }
+    .zasada-title {
+      flex: 1; font-size: .82rem; font-weight: 700;
+      color: var(--gold); text-transform: uppercase; letter-spacing: .5px;
+    }
+    .zasada-item:not(.active) .zasada-title { color: var(--text-dim); }
+    .zasada-body { padding: 0 12px 12px; display: none; }
+    .zasada-item.expanded .zasada-body { display: block; }
+    .zasada-body textarea { min-height: 72px; font-size: .83rem; margin-top: 4px; }
+    .zasada-expand-btn {
+      background: none; border: none; color: var(--text-dim);
+      cursor: pointer; font-size: .8rem; padding: 2px 4px;
+    }
+    .profile-save-bar { display: flex; justify-content: flex-end; margin-top: 12px; }
+
+    /* ── Email ── */
+    .email-layout { display: flex; gap: 0; height: 100%; overflow: hidden; }
+    .email-list-pane {
+      width: 300px; flex-shrink: 0; border-right: 1px solid var(--border);
+      overflow-y: auto; background: var(--bg2);
+    }
+    .email-detail-pane { flex: 1; overflow-y: auto; padding: 20px; }
+    @media(max-width:600px) {
+      .email-list-pane { width: 100%; border-right: none; }
+      .email-detail-pane { display: none; }
+      .email-detail-pane.active { display: block; }
+      .email-list-pane.hidden { display: none; }
+    }
+    .email-item {
+      padding: 12px 14px; border-bottom: 1px solid var(--border);
+      cursor: pointer; transition: background .12s;
+    }
+    .email-item:hover { background: var(--bg3); }
+    .email-item.active { background: var(--bg4); border-left: 3px solid var(--gold); }
+    .email-item.unread .ei-subject { font-weight: 700; color: var(--text); }
+    .email-item.unread .ei-from { font-weight: 700; }
+    .ei-from    { font-size: .8rem; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .ei-subject { font-size: .78rem; color: var(--text-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
+    .ei-date    { font-size: .68rem; color: var(--text-dim); margin-top: 3px; }
+    .ei-unread-dot { display: inline-block; width: 7px; height: 7px; background: var(--gold); border-radius: 50%; margin-right: 5px; flex-shrink: 0; }
+
+    .email-toolbar {
+      display: flex; align-items: center; gap: 8px; padding: 10px 14px;
+      border-bottom: 1px solid var(--border); background: var(--bg2); flex-shrink: 0;
+    }
+    .email-toolbar .spacer { flex: 1; }
+
+    .email-detail-pane { background: var(--bg); }
+    .email-msg-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 20px 24px; max-width: 820px; }
+    .email-header { margin-bottom: 16px; }
+    .email-header h2 { font-size: 1.05rem; font-weight: 700; margin-bottom: 12px; line-height: 1.45; color: var(--text); }
+    .email-meta-row { display: flex; gap: 8px; align-items: baseline; margin-bottom: 5px; font-size: .82rem; }
+    .email-meta-row .label { color: var(--text-dim); min-width: 28px; flex-shrink: 0; }
+    .email-meta-row .value { color: var(--text); word-break: break-all; }
+    .email-date-row { font-size: .75rem; color: var(--text-dim); margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border); }
+    .email-actions { margin-top: 12px; }
+    .email-body { font-size: .875rem; line-height: 1.75; white-space: pre-wrap; word-break: break-word; color: var(--text); }
+    .email-divider { border: none; border-top: 1px solid var(--border); margin: 18px 0; }
+
+    .email-list-header { padding: 10px 14px; font-size: .7rem; font-weight: 700; color: var(--gold); text-transform: uppercase; letter-spacing: .8px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 6px; }
+    .email-pager { display: flex; align-items: center; justify-content: center; gap: 12px; padding: 10px; border-top: 1px solid var(--border); font-size: .78rem; color: var(--text-dim); }
+
+    /* ── Email tabs (Skrzynka / Kontakty) ── */
+    .email-tabs { display: flex; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+    .email-tab { flex: 1; padding: 9px 4px; font-size: .75rem; font-weight: 600; text-align: center; cursor: pointer; color: var(--text-dim); background: none; border: none; border-bottom: 2px solid transparent; transition: color .15s, border-color .15s; }
+    .email-tab.active { color: var(--gold); border-bottom-color: var(--gold); }
+    .email-tab:hover:not(.active) { color: var(--text); }
+
+    /* ── Contacts panel ── */
+    #contacts-panel { display: none; flex-direction: column; flex: 1; overflow: hidden; }
+    #contacts-panel.active { display: flex; }
+    #inbox-panel { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
+    #inbox-panel.hidden { display: none; }
+    .contacts-search-bar { padding: 8px 10px; border-bottom: 1px solid var(--border); display: flex; gap: 6px; }
+    .contacts-search-bar input { flex: 1; background: var(--bg3); border: 1px solid var(--border); border-radius: 6px; padding: 5px 8px; font-size: .78rem; color: var(--text); }
+    .contact-item { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-bottom: 1px solid var(--border); cursor: default; }
+    .contact-item:hover { background: var(--bg3); }
+    .contact-avatar { width: 34px; height: 34px; border-radius: 50%; background: var(--gold); color: #000; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: .85rem; flex-shrink: 0; }
+    .contact-info { flex: 1; min-width: 0; }
+    .contact-name  { font-size: .82rem; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .contact-email { font-size: .72rem; color: var(--text-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .contact-actions { display: flex; gap: 4px; opacity: 0; transition: opacity .15s; }
+    .contact-item:hover .contact-actions { opacity: 1; }
+    #contacts-list { overflow-y: auto; flex: 1; }
+
+    /* ── Autocomplete ── */
+    .autocomplete-wrap { position: relative; }
+    .autocomplete-list { position: absolute; top: 100%; left: 0; right: 0; background: var(--bg2); border: 1px solid var(--border); border-radius: 6px; max-height: 200px; overflow-y: auto; z-index: 200; box-shadow: 0 6px 20px rgba(0,0,0,.4); display: none; }
+    .autocomplete-list.open { display: block; }
+    .autocomplete-item { padding: 8px 12px; cursor: pointer; font-size: .82rem; display: flex; align-items: center; gap: 10px; }
+    .autocomplete-item:hover, .autocomplete-item.selected { background: var(--bg3); }
+    .autocomplete-avatar { width: 26px; height: 26px; border-radius: 50%; background: var(--gold); color: #000; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: .72rem; flex-shrink: 0; }
+    .autocomplete-name  { font-weight: 600; color: var(--text); }
+    .autocomplete-email { color: var(--text-dim); font-size: .73rem; }
+
+    #email-view { padding: 0; display: none; flex-direction: column; }
+    #email-view.active { display: flex; }
+
+    /* ── Empty state ── */
+    .empty { text-align: center; padding: 40px 20px; color: var(--text-dim); }
+    .empty .icon { font-size: 2.5rem; margin-bottom: 10px; }
+    .empty p { font-size: .88rem; line-height: 1.5; }
+
+    /* ── Scrollbar ── */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    @media(min-width: 600px) {
+      .modal { border-radius: 16px; margin-bottom: 40px; }
+      .modal-overlay { align-items: center; }
+      .stats-grid { grid-template-columns: repeat(4, 1fr); }
+    }
+
+    /* ── Gallery view ── */
+    .gallery-card {
+      background: var(--bg2); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 14px 16px;
+      margin-bottom: 10px; transition: border-color .15s;
+    }
+    .gallery-card:hover { border-color: var(--gold-dim); }
+    .gallery-card .gc-head { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+    .gallery-card .gc-name { font-weight: 700; font-size: .95rem; flex: 1; }
+    .gallery-card .gc-meta { font-size: .78rem; color: var(--text-dim); display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 10px; }
+    .gallery-card .gc-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+    .gallery-preview {
+      display: grid; grid-template-columns: repeat(5, 1fr); gap: 3px;
+      border-radius: 6px; overflow: hidden; margin-bottom: 10px; max-height: 80px;
+    }
+    .gallery-preview img { width: 100%; height: 80px; object-fit: cover; display: block; }
+
+    /* ── Dir Picker ── */
+    .dirpicker-overlay { z-index: 300; }
+    .dirpicker-modal   { max-width: 520px; }
+    .dirpicker-breadcrumb {
+      font-size: .75rem; color: var(--text-dim); margin-bottom: 10px;
+      word-break: break-all; line-height: 1.5;
+      background: var(--bg3); padding: 7px 10px; border-radius: 6px;
+    }
+    .dirpicker-breadcrumb strong { color: var(--gold); }
+    .dirpicker-list {
+      max-height: 280px; overflow-y: auto;
+      border: 1px solid var(--border); border-radius: 8px;
+      margin-bottom: 10px;
+    }
+    .dirpicker-item {
+      display: flex; align-items: center; gap: 8px;
+      padding: 9px 12px; cursor: pointer;
+      border-bottom: 1px solid var(--border); font-size: .85rem;
+      transition: background .1s;
+    }
+    .dirpicker-item:last-child { border-bottom: none; }
+    .dirpicker-item:hover { background: var(--bg4); }
+    .dirpicker-item.up { color: var(--text-dim); font-style: italic; }
+    .dirpicker-item .di-icon { font-size: 1rem; flex-shrink: 0; }
+    .dirpicker-item .di-name { flex: 1; }
+    .dirpicker-roots { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+    .dirpicker-root-btn {
+      padding: 5px 10px; border-radius: 6px; font-size: .78rem;
+      background: var(--bg3); border: 1px solid var(--border);
+      color: var(--text); cursor: pointer; transition: background .1s;
+    }
+    .dirpicker-root-btn:hover { background: var(--bg4); }
+    .dirpicker-newdir {
+      display: flex; gap: 6px; margin-bottom: 10px;
+    }
+    .dirpicker-newdir input { flex: 1; padding: 7px 10px; font-size: .85rem; }
+    .dirpicker-selected {
+      font-size: .78rem; padding: 7px 10px; border-radius: 6px;
+      background: #1a2a10; border: 1px solid var(--success);
+      color: var(--success); margin-bottom: 10px; word-break: break-all;
+      display: none;
+    }
+    .dirpicker-selected.visible { display: block; }
+    .dirpicker-loading { text-align: center; padding: 24px; color: var(--text-dim); font-size: .85rem; }
+    .dirpicker-file-item {
+      display: flex; align-items: center; gap: 8px;
+      padding: 9px 12px; cursor: pointer;
+      border-bottom: 1px solid var(--border); font-size: .82rem;
+      transition: background .1s;
+    }
+    .dirpicker-file-item:last-child { border-bottom: none; }
+    .dirpicker-file-item:hover  { background: var(--bg4); }
+    .dirpicker-file-item.active { background: #1a2a10; border-left: 3px solid var(--success); }
+    .dirpicker-file-item .df-name { flex: 1; color: var(--text); word-break: break-all; }
+    .dirpicker-file-item .df-meta { color: var(--text-dim); font-size: .72rem; white-space: nowrap; }
+
+    /* restore modal */
+    .restore-info-box {
+      background: var(--bg3); border: 1px solid var(--border);
+      border-radius: 8px; padding: 12px 14px; margin-bottom: 12px; font-size: .82rem;
+    }
+    .restore-info-box .ri-row { display: flex; gap: 8px; margin-bottom: 4px; }
+    .restore-info-box .ri-row:last-child { margin-bottom: 0; }
+    .restore-info-box .ri-label { color: var(--text-dim); min-width: 110px; flex-shrink: 0; }
+    .restore-info-box.selected { border-color: var(--success); }
+    .restore-warning {
+      background: #2a1500; border: 1px solid #8a4a00; border-radius: 8px;
+      padding: 10px 14px; font-size: .8rem; color: #d4a060; margin-bottom: 12px;
+      line-height: 1.55;
+    }
+
+    /* ── Backup ── */
+    .backup-status {
+      display: flex; align-items: center; gap: 10px;
+      padding: 12px 14px; background: var(--bg3);
+      border: 1px solid var(--border); border-radius: 8px; margin-bottom: 12px;
+    }
+    .backup-status .bs-icon { font-size: 1.4rem; }
+    .backup-status .bs-info { flex: 1; }
+    .backup-status .bs-title { font-size: .82rem; font-weight: 700; color: var(--text); }
+    .backup-status .bs-sub   { font-size: .72rem; color: var(--text-dim); margin-top: 1px; }
+    .backup-status.ok   { border-color: var(--success); }
+    .backup-status.warn { border-color: #8a6000; }
+    .backup-files { max-height: 180px; overflow-y: auto; }
+    .backup-file-item {
+      display: flex; align-items: center; gap: 8px; padding: 7px 10px;
+      border-bottom: 1px solid var(--border); font-size: .78rem;
+    }
+    .backup-file-item:last-child { border-bottom: none; }
+    .backup-file-item .bf-name  { flex: 1; color: var(--text); word-break: break-all; }
+    .backup-file-item .bf-meta  { color: var(--text-dim); white-space: nowrap; }
+    .backup-setup-modal .modal  { max-width: 480px; }
+  </style>
+</head>
+<body>
+
+
+<div id="license-overlay" style="position:fixed; inset:0; background:rgba(0,0,0,0.95); z-index:9999; display:flex; align-items:center; justify-content:center; backdrop-filter:blur(10px);">
+  <div style="background:#181818; border:1px solid #c9a84c; padding:40px; border-radius:15px; max-width:600px; width:90%; color:#e8e8e8; font-family:sans-serif; box-shadow: 0 0 30px rgba(201,168,76,0.2);">
+    <h2 style="color:#c9a84c; margin-bottom:20px;">Umowa Licencyjna Foto-Studio</h2>
+    <div style="height:250px; overflow-y:auto; font-size:14px; line-height:1.6; border-bottom:1px solid #333; margin-bottom:20px; padding-right:15px; color:#bbb;">
+      <p><strong>1. Instalacja Lokalna:</strong> Oprogramowanie Foto-Studio jest dostarczane w modelu "Self-Hosted". Autor nie przechowuje Twoich danych ani nie odpowiada za ich utratę.</p>
+      <p><strong>2. Kopie Zapasowe:</strong> Użytkownik jest zobowiązany do regularnego wykonywania kopii danych przy użyciu wbudowanego modułu kopii zapasowej.</p>
+      <p><strong>3. Moduł AI:</strong> Funkcje AI wymagają własnego klucza Anthropic API. Koszty zapytań ponosi Użytkownik.</p>
+    </div>
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+      <label style="font-size:13px; cursor:pointer;">
+        <input type="checkbox" id="accept-check"> Akceptuję warunki licencji
+      </label>
+      <button onclick="acceptLicense()" id="start-btn" disabled style="background:#c9a84c; color:black; border:none; padding:12px 25px; border-radius:5px; cursor:not-allowed; opacity:0.5; font-weight:bold; transition: 0.3s;">Uruchom System</button>
+    </div>
+  </div>
+</div>
+
+<!-- Backup setup modal (first run) -->
+<div class="modal-overlay backup-setup-modal" id="backup-setup-overlay">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-title">💾 Konfiguracja kopii zapasowych</div>
+    <p style="font-size:.83rem;color:var(--text-dim);margin-bottom:16px;line-height:1.6">
+      Przed pierwszym uruchomieniem wskaż folder, w którym Foto-Studio będzie automatycznie
+      zapisywać kopie zapasowe Twoich danych (sesje, sprzęt, kontakty, ustawienia).<br><br>
+      Podaj pełną ścieżkę do folderu na tym komputerze, np.&nbsp;
+      <code style="background:var(--bg4);padding:2px 5px;border-radius:4px;font-size:.8rem">C:\Foto-Studio\backup</code>
+    </p>
+    <div class="field">
+      <label>Folder kopii zapasowych *</label>
+      <div style="display:flex;gap:6px">
+        <input type="text" id="backup-setup-path" placeholder="Np. C:\Foto-Studio\backup albo /Users/marek/backup" autocomplete="off" style="flex:1">
+        <button type="button" class="btn btn-ghost btn-sm" style="flex-shrink:0;white-space:nowrap"
+          onclick="openDirPicker(p => { document.getElementById('backup-setup-path').value = p; })">📂 Przeglądaj</button>
+      </div>
+    </div>
+    <div class="field">
+      <label>Harmonogram automatycznych kopii</label>
+      <select id="backup-setup-interval">
+        <option value="1">Co godzinę</option>
+        <option value="6">Co 6 godzin</option>
+        <option value="24" selected>Raz dziennie</option>
+        <option value="168">Raz w tygodniu</option>
+        <option value="0">Wyłączony (tylko ręcznie)</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="skipBackupSetup()">Pomiń (skonfiguruj później)</button>
+      <button class="btn btn-primary" onclick="saveBackupSetup()">💾 Zapisz i uruchom</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const check = document.getElementById('accept-check');
+  const btn = document.getElementById('start-btn');
+  check.onchange = () => {
+    btn.disabled = !check.checked;
+    btn.style.opacity = check.checked ? "1" : "0.5";
+    btn.style.cursor = check.checked ? "pointer" : "not-allowed";
+  };
+  function acceptLicense() {
+    localStorage.setItem('foto_studio_accepted', 'true');
+    document.getElementById('license-overlay').style.display = 'none';
+    showBackupSetupIfNeeded();
+  }
+  if(localStorage.getItem('foto_studio_accepted') === 'true' || localStorage.getItem('focusmaster_accepted') === 'true') {
+    document.getElementById('license-overlay').style.display = 'none';
+  }
+</script>
+<header>
+  <div class="logo">📸 Foto-Studio <span>V2.5 &nbsp;·&nbsp; Autor: Marek Zettel</span></div>
+  <div class="spacer"></div>
+  <span id="api-status" class="err">Brak klucza API</span>
+</header>
+
+<nav>
+  <button class="nav-btn active" data-view="dashboard"><span class="icon">🏠</span>Dashboard</button>
+  <button class="nav-btn" data-view="chat"><span class="icon">🤖</span>Asystent</button>
+  <button class="nav-btn" data-view="sessions"><span class="icon">📅</span>Sesje</button>
+  <button class="nav-btn" data-view="equipment"><span class="icon">🎒</span>Sprzęt</button>
+  <button class="nav-btn" data-view="email"><span class="icon">📧</span>Poczta</button>
+  <button class="nav-btn" data-view="contract"><span class="icon">📄</span>Umowa</button>
+  <button class="nav-btn" data-view="gallery"><span class="icon">🖼️</span>Galerie</button>
+  <button class="nav-btn" data-view="settings"><span class="icon">⚙️</span>Ustawienia</button>
+</nav>
+
+<main>
+  <!-- DASHBOARD -->
+  <div class="view active" id="dashboard-view">
+    <div class="stats-grid" id="stats-grid"></div>
+    <div id="tip-container"></div>
+    <div class="card">
+      <div class="card-title">Najbliższe sesje</div>
+      <div id="upcoming-sessions"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Szybkie akcje</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-primary" onclick="openNewSessionModal()">➕ Nowa sesja</button>
+        <button class="btn btn-ghost" onclick="switchView('chat')">💬 Pytaj asystenta</button>
+        <button class="btn btn-ghost" onclick="switchView('equipment')">🎒 Sprawdź sprzęt</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- CHAT -->
+  <div class="view" id="chat-view">
+    <div class="chat-header">
+      <span class="title">🤖 Asystent Fotografa</span>
+      <select class="persona-select" id="persona-select">
+        <option value="ogolny">Ogólny asystent</option>
+        <option value="techniczny">Ekspert techniczny</option>
+        <option value="biznesowy">Doradca biznesowy</option>
+        <option value="kreatywny">Kreatywny doradca</option>
+        <option value="postprocessing">Post-processing</option>
+      </select>
+      <button class="btn btn-ghost btn-sm" onclick="clearChat()">🗑️ Wyczyść</button>
+    </div>
+    <div id="chat-messages">
+      <div class="msg system-msg">Witaj! Jestem Twoim asystentem fotograficznym. Zapytaj mnie o wszystko związane z fotografią eventową.</div>
+    </div>
+    <div class="typing-indicator" id="typing">
+      <div class="typing-dots"><span></span><span></span><span></span></div>
+    </div>
+    <div id="chat-input-area">
+      <textarea id="chat-input" placeholder="Napisz wiadomość..." rows="1"></textarea>
+      <button id="chat-send" onclick="sendMessage()">➤</button>
+    </div>
+  </div>
+
+  <!-- SESSIONS -->
+  <div class="view" id="sessions-view">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+      <input type="search" id="session-search" placeholder="🔍 Szukaj sesji..." style="flex:1" oninput="renderSessions()">
+      <select id="session-filter" onchange="renderSessions()" style="width:auto;min-width:120px">
+        <option value="">Wszystkie</option>
+        <option value="ślub">Ślub</option>
+        <option value="chrzciny">Chrzciny</option>
+        <option value="komunia">Komunia</option>
+        <option value="urodziny">Urodziny</option>
+        <option value="firmowe">Firmowe</option>
+        <option value="portret">Portret</option>
+        <option value="inne">Inne</option>
+      </select>
+    </div>
+    <div id="sessions-list"></div>
+    <button class="fab" onclick="openNewSessionModal()">➕</button>
+  </div>
+
+  <!-- EQUIPMENT -->
+  <div class="view" id="equipment-view">
+    <div class="equip-progress" id="equip-progress-bar-wrap">
+      <div class="equip-progress-bar" id="equip-progress-bar" style="width:0%"></div>
+    </div>
+    <div class="equip-progress-label" id="equip-progress-label">0 / 0 zaznaczonych</div>
+    <div class="equip-controls">
+      <button class="btn btn-ghost btn-sm" onclick="checkAllEquip()">✅ Zaznacz wszystko</button>
+      <button class="btn btn-ghost btn-sm" onclick="uncheckAllEquip()">⬜ Odznacz wszystko</button>
+      <button class="btn btn-primary btn-sm" onclick="openModal('equip-modal')">➕ Dodaj sprzęt</button>
+    </div>
+    <div id="equip-list"></div>
+  </div>
+
+  <!-- EMAIL -->
+  <div class="view" id="email-view">
+    <div class="email-toolbar">
+      <button class="btn btn-primary btn-sm" onclick="openCompose()">✏️ Nowy e-mail</button>
+      <button class="btn btn-ghost btn-sm" onclick="loadInbox(1)" id="inbox-refresh-btn">🔄 Odśwież</button>
+      <div class="spacer"></div>
+      <span id="email-account-label" style="font-size:.72rem;color:var(--text-dim)"></span>
+    </div>
+    <div class="email-layout">
+      <div class="email-list-pane" id="email-list-pane">
+        <div class="email-tabs">
+          <button class="email-tab active" id="tab-inbox" onclick="switchEmailTab('inbox')">📥 Skrzynka</button>
+          <button class="email-tab" id="tab-contacts" onclick="switchEmailTab('contacts')">👥 Kontakty</button>
+        </div>
+        <!-- Inbox panel -->
+        <div id="inbox-panel">
+          <div class="contacts-search-bar" style="border-bottom:1px solid var(--border)">
+            <input type="text" id="inbox-search" placeholder="Szukaj w skrzynce..." autocomplete="off"
+              onkeydown="if(event.key==='Enter') searchInbox()" style="flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:5px 8px;font-size:.78rem;color:var(--text)">
+            <button class="btn btn-ghost btn-sm" onclick="searchInbox()" title="Szukaj">🔍</button>
+            <button class="btn btn-ghost btn-sm" id="search-clear-btn" onclick="clearSearch()" title="Wyczyść" style="display:none">✕</button>
+          </div>
+          <div class="email-list-header">
+            <span id="inbox-list-label">Odebrane</span> <span id="inbox-count" style="color:var(--text-dim);font-weight:400"></span>
+          </div>
+          <div id="email-list-items">
+            <div class="empty"><div class="icon">📧</div><p>Skonfiguruj konto Gmail<br>w Ustawieniach.</p></div>
+          </div>
+          <div class="email-pager" id="email-pager" style="display:none">
+            <button class="btn btn-ghost btn-sm" id="pager-prev" onclick="emailPage(-1)">‹ Poprzednie</button>
+            <span id="pager-label"></span>
+            <button class="btn btn-ghost btn-sm" id="pager-next" onclick="emailPage(1)">Następne ›</button>
+          </div>
+        </div>
+        <!-- Contacts panel -->
+        <div id="contacts-panel">
+          <div class="contacts-search-bar">
+            <input type="text" id="contacts-search" placeholder="Szukaj kontaktu..." oninput="renderContacts()">
+            <button class="btn btn-ghost btn-sm" id="sync-contacts-btn" onclick="syncGoogleContacts()" title="Pobierz kontakty z Google (CardDAV)">🔄</button>
+            <button class="btn btn-ghost btn-sm" onclick="document.getElementById('contacts-csv-input').click()" title="Importuj z pliku CSV (Google Contacts)">📥 CSV</button>
+            <button class="btn btn-primary btn-sm" onclick="openAddContact()">+ Dodaj</button>
+            <input type="file" id="contacts-csv-input" accept=".csv" style="display:none" onchange="importContactsCSV(event)">
+          </div>
+          <div id="contacts-sync-status" style="font-size:.72rem;color:var(--text-dim);padding:4px 12px;display:none"></div>
+          <div id="contacts-csv-help" style="font-size:.7rem;color:var(--text-dim);padding:4px 12px 8px;line-height:1.5;display:none">
+            Jak wyeksportować z Google: <a href="https://contacts.google.com" target="_blank" style="color:var(--gold)">contacts.google.com</a> → Eksportuj → Format Google CSV
+          </div>
+          <div id="contacts-list"></div>
+        </div>
+      </div>
+      <div class="email-detail-pane" id="email-detail-pane">
+        <div class="empty" style="margin-top:60px"><div class="icon">📨</div><p>Wybierz e-mail z listy.</p></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- GALLERY -->
+  <div class="view" id="gallery-view">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+      <h2 style="flex:1;font-size:.95rem;font-weight:700;color:var(--gold)">🖼️ Galerie dla klientów</h2>
+      <button class="btn btn-primary" onclick="openCreateGalleryModal()">➕ Nowa galeria</button>
+    </div>
+    <div id="gallery-list"></div>
+  </div>
+
+  <!-- CONTRACT -->
+  <div class="view" id="contract-view">
+    <div class="card">
+      <div class="card-title">📄 Generator umowy fotograficznej</div>
+
+      <div class="contract-section-title">Fotograf / Studio</div>
+      <div class="contract-grid">
+        <div class="field"><label>Imię i nazwisko fotografa *</label><input type="text" id="c-photo-name" placeholder="Jan Kowalski"></div>
+        <div class="field"><label>Nazwa firmy / NIP</label><input type="text" id="c-photo-company" placeholder="Np. JK Photography / NIP: 000-000-00-00"></div>
+        <div class="field"><label>Adres</label><input type="text" id="c-photo-address" placeholder="ul. Przykładowa 1, 00-000 Warszawa"></div>
+        <div class="field"><label>Telefon / e-mail</label><input type="text" id="c-photo-contact" placeholder="000 000 000 / jan@foto.pl"></div>
+      </div>
+
+      <div class="contract-section-title">Klient (Zamawiający)</div>
+      <div class="contract-grid">
+        <div class="field"><label>Imię i nazwisko klienta *</label><input type="text" id="c-client-name" placeholder="Anna i Piotr Nowak"></div>
+        <div class="field"><label>Adres klienta</label><input type="text" id="c-client-address" placeholder="ul. Kwiatowa 5, 00-000 Kraków"></div>
+        <div class="field"><label>Telefon klienta</label><input type="text" id="c-client-phone" placeholder="000 000 000"></div>
+        <div class="field"><label>E-mail klienta</label><input type="text" id="c-client-email" placeholder="klient@email.pl"></div>
+      </div>
+
+      <div class="contract-section-title">Szczegóły zlecenia</div>
+      <div class="field" style="margin-bottom:14px">
+        <label>Wczytaj dane z zaplanowanej sesji</label>
+        <div style="display:flex;gap:8px">
+          <select id="c-session-pick" style="flex:1">
+            <option value="">— wybierz sesję —</option>
+          </select>
+          <button type="button" class="btn btn-ghost btn-sm" onclick="loadSessionIntoContract()">↩️ Wczytaj</button>
+        </div>
+      </div>
+      <div class="contract-grid">
+        <div class="field"><label>Rodzaj usługi *</label>
+          <select id="c-type">
+            <option value="reportaż ślubny">Reportaż ślubny</option>
+            <option value="sesja portretowa">Sesja portretowa</option>
+            <option value="fotografia eventowa">Fotografia eventowa</option>
+            <option value="fotografia komunijna">Fotografia komunijna</option>
+            <option value="fotografia chrzcin">Fotografia chrzcin</option>
+            <option value="fotografia urodzinowa">Fotografia urodzinowa</option>
+            <option value="fotografia firmowa">Fotografia firmowa</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Data wykonania usługi *</label>
+          <div class="date-wrap">
+            <input type="date" id="c-event-date" oninput="calSyncInput('c-event-date','cal-event-popup','event')">
+            <button type="button" class="cal-btn" onclick="calToggle('event','c-event-date','cal-event-popup')" title="Wybierz z kalendarza">📅</button>
+            <div class="cal-popup" id="cal-event-popup">
+              <div class="cal-nav">
+                <button onclick="calShift('event',-1,'c-event-date','cal-event-popup')">‹</button>
+                <span class="cal-month-label" id="cal-event-month-label"></span>
+                <button onclick="calShift('event',1,'c-event-date','cal-event-popup')">›</button>
+              </div>
+              <div class="cal-grid" id="cal-event-grid"></div>
+            </div>
+          </div>
+        </div>
+        <div class="field"><label>Godzina rozpoczęcia</label><input type="time" id="c-event-time" value="12:00"></div>
+        <div class="field"><label>Czas trwania</label><input type="text" id="c-event-duration" placeholder="Np. do 8 godzin"></div>
+        <div class="field" style="grid-column:1/-1"><label>Miejsce realizacji *</label><input type="text" id="c-location" placeholder="Np. Hotel Grand, ul. Hotelowa 1, Warszawa"></div>
+      </div>
+
+      <div class="contract-section-title">Wynagrodzenie i płatności</div>
+      <div class="contract-grid">
+        <div class="field">
+          <label>Łączna kwota wynagrodzenia (PLN) *</label>
+          <input type="number" id="c-fee" placeholder="4500" min="0" oninput="autoCalcDeposit()">
+        </div>
+        <div class="field">
+          <label>Zadatek (PLN) *</label>
+          <input type="number" id="c-deposit" placeholder="1350" min="0">
+          <div id="deposit-hint" style="font-size:.75rem;color:var(--gold);margin-top:4px;min-height:1.2em"></div>
+        </div>
+        <div class="field">
+          <label>Termin wpłaty zadatku</label>
+          <div class="date-wrap">
+            <input type="date" id="c-deposit-date" oninput="calDepSyncFromInput()">
+            <button type="button" class="cal-btn" onclick="toggleCalDep()" title="Wybierz z kalendarza">📅</button>
+            <div class="cal-popup" id="cal-dep-popup">
+              <div class="cal-nav">
+                <button onclick="calDepMove(-1)">‹</button>
+                <span class="cal-month-label" id="cal-dep-month-label"></span>
+                <button onclick="calDepMove(1)">›</button>
+              </div>
+              <div class="cal-grid" id="cal-dep-grid"></div>
+            </div>
+          </div>
+        </div>
+        <div class="field"><label>Pozostała kwota — termin płatności</label><input type="text" id="c-balance-when" placeholder="Np. w dniu realizacji usługi"></div>
+      </div>
+
+      <div class="contract-section-title">Realizacja i dostarczenie zdjęć</div>
+      <div class="contract-grid">
+        <div class="field"><label>Minimalna liczba zdjęć</label><input type="text" id="c-photo-count" placeholder="Np. min. 400 zdjęć"></div>
+        <div class="field"><label>Termin dostarczenia</label><input type="text" id="c-delivery" placeholder="Np. do 30 dni roboczych od daty realizacji"></div>
+        <div class="field"><label>Format dostarczenia</label><input type="text" id="c-format" placeholder="Np. galeria online + pendrive z plikami JPG"></div>
+        <div class="field"><label>Retusz</label><input type="text" id="c-retouch" placeholder="Np. korekcja kolorów, kadrowanie, retusz cery"></div>
+      </div>
+
+      <div class="contract-section-title">Dodatkowe ustalenia</div>
+      <div class="field">
+        <label>Dodatkowe postanowienia (opcjonalne)</label>
+        <textarea id="c-extra" rows="3" placeholder="Np. Zamawiający zapewnia posiłek dla fotografa podczas wesela. Fotograf zobowiązuje się do dyskrecji..."></textarea>
+      </div>
+
+      <div class="field">
+        <label>Miejsce i data zawarcia umowy</label>
+        <div class="contract-grid">
+          <input type="text" id="c-sign-place" placeholder="Np. Warszawa">
+          <input type="date" id="c-sign-date">
+        </div>
+      </div>
+
+      <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px;flex-wrap:wrap">
+        <button class="btn btn-ghost" onclick="fillContractFromStudio()">↩️ Wczytaj dane studia</button>
+        <button class="btn btn-primary" onclick="previewContract()">👁️ Podgląd i druk</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SETTINGS -->
+  <div class="view" id="settings-view">
+    <div class="card">
+      <div class="card-title">🔑 Konfiguracja API</div>
+      <div class="field">
+        <label>Klucz API Anthropic (Claude)</label>
+        <input type="password" id="api-key-input" placeholder="sk-ant-..." autocomplete="off">
+      </div>
+      <a class="api-link" href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">
+        🔗 Pobierz klucz API na console.anthropic.com →
+      </a>
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <button class="btn btn-primary" onclick="saveApiKey()">💾 Zapisz klucz</button>
+        <button class="btn btn-danger btn-sm" onclick="clearApiKey()">🗑️ Usuń klucz</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">👤 Studio</div>
+      <div class="field">
+        <label>Nazwa studia</label>
+        <input type="text" id="studio-name" placeholder="Np. Jan Kowalski Photography">
+      </div>
+      <div class="field">
+        <label>Specjalizacja</label>
+        <select id="studio-spec">
+          <option value="event">Fotografia eventowa</option>
+          <option value="slubna">Fotografia ślubna</option>
+          <option value="portretowa">Fotografia portretowa</option>
+          <option value="komercyjna">Fotografia komercyjna</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Numer rachunku bankowego</label>
+        <input type="text" id="studio-iban" placeholder="PL 00 0000 0000 0000 0000 0000 0000" autocomplete="off"
+          oninput="onIbanInput(this)" maxlength="35" style="font-family:monospace;letter-spacing:.05em">
+        <div id="iban-status" style="font-size:.75rem;margin-top:4px;min-height:1.1em"></div>
+      </div>
+      <div class="field">
+        <label>Nazwa banku <span style="color:var(--text-dim);font-weight:400">(uzupełniana automatycznie)</span></label>
+        <input type="text" id="studio-bank" placeholder="Np. PKO Bank Polski">
+      </div>
+      <button class="btn btn-primary" onclick="saveStudioSettings()">💾 Zapisz</button>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📧 Konto Gmail</div>
+      <p style="font-size:.75rem;color:var(--text-dim);margin-bottom:12px;line-height:1.5">
+        Wymagane <strong>Hasło aplikacji</strong> (nie zwykłe hasło).<br>
+        Wygeneruj je na: <a href="https://myaccount.google.com/apppasswords" target="_blank" rel="noopener" style="color:var(--gold)">myaccount.google.com/apppasswords</a><br>
+        <em>(wymagana 2-etapowa weryfikacja Google)</em>
+      </p>
+      <div class="field">
+        <label>Adres Gmail</label>
+        <input type="email" id="gmail-address" placeholder="twoj@gmail.com" autocomplete="off">
+      </div>
+      <div class="field">
+        <label>Hasło aplikacji Google</label>
+        <input type="password" id="gmail-apppassword" placeholder="xxxx xxxx xxxx xxxx" autocomplete="new-password">
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <button class="btn btn-primary" onclick="saveGmailSettings()">💾 Zapisz</button>
+        <button class="btn btn-ghost btn-sm" onclick="testGmailConnection()">🔌 Testuj połączenie</button>
+        <span id="gmail-test-status" style="font-size:.75rem"></span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🔔 Preferencje</div>
+      <div class="setting-row">
+        <div class="setting-info">
+          <div class="s-title">Motyw jasny</div>
+          <div class="s-desc">Przełącz między ciemnym a jasnym interfejsem</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="pref-light" onchange="toggleTheme()">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      <div class="setting-row">
+        <div class="setting-info">
+          <div class="s-title">Procent zadatku</div>
+          <div class="s-desc">Domyślny procent zadatku przy tworzeniu umowy</div>
+        </div>
+        <select id="pref-deposit-pct" onchange="savePrefs()" style="width:auto;min-width:80px">
+          <option value="20">20%</option>
+          <option value="25">25%</option>
+          <option value="30" selected>30%</option>
+          <option value="40">40%</option>
+          <option value="50">50%</option>
+        </select>
+      </div>
+      <div class="setting-row">
+        <div class="setting-info">
+          <div class="s-title">Powiadomienia o sesjach</div>
+          <div class="s-desc">Przypomnij o sesji dzień wcześniej</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="pref-notif" onchange="savePrefs()">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      <div class="setting-row">
+        <div class="setting-info">
+          <div class="s-title">Eksportuj dane</div>
+          <div class="s-desc">Zapisz backup do pliku JSON</div>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="exportData()">📤 Eksportuj</button>
+      </div>
+      <div class="setting-row">
+        <div class="setting-info">
+          <div class="s-title">Importuj dane</div>
+          <div class="s-desc">Wczytaj backup z pliku JSON</div>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="importDataClick()">📥 Importuj</button>
+      </div>
+    </div>
+
+    <!-- CENNIK -->
+    <div class="card">
+      <div class="card-title">💰 Cennik — pakiety</div>
+      <p style="font-size:.78rem;color:var(--text-dim);margin-bottom:12px">Pakiety są widoczne dla asystenta AI i pojawiają się przy pytaniach o ceny.</p>
+      <div id="packages-list"></div>
+      <button class="btn btn-ghost btn-sm" style="width:100%;margin-bottom:12px" onclick="addPackage()">➕ Dodaj pakiet</button>
+      <div class="profile-save-bar">
+        <button class="btn btn-primary" onclick="saveProfile(event)">💾 Zapisz profil</button>
+      </div>
+    </div>
+
+    <!-- STYL I FILOZOFIA -->
+    <div class="card">
+      <div class="card-title">🎨 Styl i filozofia pracy</div>
+      <div class="field">
+        <label>Opisz swój styl fotograficzny i podejście do klienta</label>
+        <textarea id="profile-styl" rows="5" placeholder="Np. Fotografuję w stylu reportażowym z elementami fine-art. Stawiam na naturalne światło i autentyczne emocje. Nie pozuję klientów – obserwuję i dokumentuję. Zależy mi na długofalowych relacjach z klientami."></textarea>
+      </div>
+    </div>
+
+    <!-- ZASADY I ASERTYWNOŚĆ -->
+    <div class="card">
+      <div class="card-title">🛡️ Zasady i asertywność</div>
+      <p style="font-size:.78rem;color:var(--text-dim);margin-bottom:12px">Włączone zasady są uwzględniane przez asystenta AI przy udzielaniu porad. Możesz edytować treść każdej zasady.</p>
+      <div id="zasady-list"></div>
+    </div>
+
+    <!-- KOPIA ZAPASOWA -->
+    <div class="card" id="backup-settings-card">
+      <div class="card-title">💾 Kopia zapasowa</div>
+
+      <div class="backup-status" id="backup-status-bar">
+        <div class="bs-icon">💾</div>
+        <div class="bs-info">
+          <div class="bs-title" id="backup-status-title">Brak konfiguracji</div>
+          <div class="bs-sub"   id="backup-status-sub">Ustaw ścieżkę poniżej</div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Folder kopii zapasowych</label>
+        <div style="display:flex;gap:6px">
+          <input type="text" id="backup-path-input" placeholder="Np. /home/marek/backups" autocomplete="off" style="flex:1">
+          <button type="button" class="btn btn-ghost btn-sm" style="flex-shrink:0;white-space:nowrap"
+            onclick="openDirPicker(p => { document.getElementById('backup-path-input').value = p; })">📂 Przeglądaj</button>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+        <div class="field" style="margin-bottom:0">
+          <label>Harmonogram</label>
+          <select id="backup-interval-select">
+            <option value="1">Co godzinę</option>
+            <option value="6">Co 6 godzin</option>
+            <option value="24">Raz dziennie</option>
+            <option value="168">Raz w tygodniu</option>
+            <option value="0">Wyłączony</option>
+          </select>
+        </div>
+        <div class="field" style="margin-bottom:0">
+          <label>Auto-backup</label>
+          <div class="setting-row" style="padding:6px 0;border:none">
+            <div class="setting-info">
+              <div class="s-desc">Włącz automatyczne kopie</div>
+            </div>
+            <label class="toggle">
+              <input type="checkbox" id="backup-auto-toggle" onchange="saveBackupSettings()">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
+        <button class="btn btn-primary" onclick="saveBackupSettings()">💾 Zapisz ustawienia</button>
+        <button class="btn btn-ghost" onclick="backupNow(true)">▶️ Wykonaj teraz</button>
+        <button class="btn btn-ghost btn-sm" onclick="loadBackupList()">📋 Lista kopii</button>
+        <button class="btn btn-ghost btn-sm" style="border-color:#8a4a00;color:#f0a030" onclick="openRestoreModal()">↩️ Przywróć dane</button>
+      </div>
+
+      <div id="backup-files-wrap" style="display:none">
+        <div class="card-title" style="margin-bottom:8px">Ostatnie kopie</div>
+        <div class="backup-files" id="backup-files-list"></div>
+      </div>
+    </div>
+
+    <div class="card" style="border-color:var(--danger)">
+      <div class="card-title" style="color:var(--danger)">⚠️ Strefa niebezpieczna</div>
+      <button class="btn btn-danger" onclick="resetAllData()">🗑️ Usuń wszystkie dane</button>
+    </div>
+  </div>
+</main>
+
+<!-- New / Edit Session Modal -->
+<div class="modal-overlay" id="session-modal">
+  <div class="modal">
+    <div class="modal-title">📅 <span id="session-modal-title">Nowa sesja</span></div>
+    <input type="hidden" id="session-edit-id">
+    <div class="field">
+      <label>Nazwa / Klient *</label>
+      <input type="text" id="s-name" placeholder="Np. Wesele Kowalskich">
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div class="field">
+        <label>Typ sesji</label>
+        <select id="s-type">
+          <option value="ślub">Ślub</option>
+          <option value="chrzciny">Chrzciny</option>
+          <option value="komunia">Komunia</option>
+          <option value="urodziny">Urodziny</option>
+          <option value="firmowe">Firmowe</option>
+          <option value="portret">Portret</option>
+          <option value="inne">Inne</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Status</label>
+        <select id="s-status">
+          <option value="zaplanowana">Zaplanowana</option>
+          <option value="potwierdzona">Potwierdzona</option>
+          <option value="w trakcie">W trakcie</option>
+          <option value="ukończona">Ukończona</option>
+          <option value="anulowana">Anulowana</option>
+        </select>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div class="field">
+        <label>Data</label>
+        <div class="date-wrap">
+          <input type="date" id="s-date" oninput="calSyncFromInput()">
+          <button type="button" class="cal-btn" onclick="toggleCal()" title="Wybierz z kalendarza">📅</button>
+          <div class="cal-popup" id="cal-popup">
+            <div class="cal-nav">
+              <button onclick="calMove(-1)">‹</button>
+              <span class="cal-month-label" id="cal-month-label"></span>
+              <button onclick="calMove(1)">›</button>
+            </div>
+            <div class="cal-grid" id="cal-grid"></div>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <label>Godzina</label>
+        <input type="time" id="s-time" value="12:00">
+      </div>
+    </div>
+    <div class="field">
+      <label>Lokalizacja</label>
+      <input type="text" id="s-location" placeholder="Np. Sala Złota, Warszawa">
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div class="field">
+        <label>Wynagrodzenie (PLN)</label>
+        <input type="number" id="s-fee" placeholder="0" min="0">
+      </div>
+      <div class="field">
+        <label>Kontakt klienta</label>
+        <input type="text" id="s-contact" placeholder="Telefon / email">
+      </div>
+    </div>
+    <div class="field">
+      <label>Notatki</label>
+      <textarea id="s-notes" placeholder="Szczegóły, wymagania, lista ujęć..."></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('session-modal')">Anuluj</button>
+      <button class="btn btn-primary" onclick="saveSession()">💾 Zapisz</button>
+    </div>
+  </div>
+</div>
+
+<!-- Session Detail Modal -->
+<div class="modal-overlay" id="session-detail-modal">
+  <div class="modal">
+    <div class="modal-title" id="detail-title"></div>
+    <div id="detail-content"></div>
+    <div class="modal-actions">
+      <button class="btn btn-danger btn-sm" onclick="deleteCurrentSession()">🗑️ Usuń</button>
+      <button class="btn btn-ghost" onclick="closeModal('session-detail-modal')">Zamknij</button>
+      <button class="btn btn-primary" onclick="editCurrentSession()">✏️ Edytuj</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Equipment Modal -->
+<div class="modal-overlay" id="equip-modal">
+  <div class="modal">
+    <div class="modal-title">🎒 Dodaj sprzęt</div>
+    <div class="field">
+      <label>Kategoria</label>
+      <select id="equip-cat">
+        <option value="Aparaty">Aparaty</option>
+        <option value="Obiektywy">Obiektywy</option>
+        <option value="Oświetlenie">Oświetlenie</option>
+        <option value="Akcesoria">Akcesoria</option>
+        <option value="Karty i nośniki">Karty i nośniki</option>
+        <option value="Inne">Inne</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Nazwa sprzętu *</label>
+      <input type="text" id="equip-name" placeholder="Np. Canon EOS R5">
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('equip-modal')">Anuluj</button>
+      <button class="btn btn-primary" onclick="addEquipItem()">➕ Dodaj</button>
+    </div>
+  </div>
+</div>
+
+<!-- Compose Email Modal -->
+<div class="modal-overlay" id="compose-modal">
+  <div class="modal" style="max-width:600px">
+    <div class="modal-title" id="compose-modal-title">✏️ Nowy e-mail</div>
+    <input type="hidden" id="compose-reply-to">
+    <input type="hidden" id="compose-message-id">
+    <div class="field">
+      <label>Do *</label>
+      <div class="autocomplete-wrap">
+        <input type="text" id="compose-to" placeholder="Wpisz imię lub adres e-mail..." autocomplete="off"
+          oninput="acFilter(this.value)" onkeydown="acKeydown(event)" onblur="setTimeout(acClose,150)">
+        <div class="autocomplete-list" id="compose-ac-list"></div>
+      </div>
+    </div>
+    <div class="field"><label>Temat *</label><input type="text" id="compose-subject" placeholder="Temat wiadomości"></div>
+    <div class="field"><label>Treść *</label><textarea id="compose-body" rows="8" placeholder="Treść wiadomości..."></textarea></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('compose-modal')">Anuluj</button>
+      <button class="btn btn-primary" onclick="sendEmail()">📤 Wyślij</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Contact Modal -->
+<div class="modal-overlay" id="add-contact-modal">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-title">👤 Dodaj kontakt</div>
+    <div class="field"><label>Imię i nazwisko *</label><input type="text" id="ac-name" placeholder="Jan Kowalski"></div>
+    <div class="field"><label>Adres e-mail *</label><input type="email" id="ac-email" placeholder="jan@gmail.com"></div>
+    <div class="field"><label>Telefon</label><input type="tel" id="ac-phone" placeholder="000 000 000"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('add-contact-modal')">Anuluj</button>
+      <button class="btn btn-primary" onclick="saveContact()">💾 Zapisz</button>
+    </div>
+  </div>
+</div>
+
+<!-- Contract Preview Modal -->
+<div class="modal-overlay" id="contract-preview-modal">
+  <div class="modal" style="max-width:720px">
+    <div class="modal-title">👁️ Podgląd umowy</div>
+    <div id="contract-preview-content"></div>
+    <div class="modal-actions" style="flex-wrap:wrap">
+      <button class="btn btn-ghost" onclick="closeModal('contract-preview-modal')">✕ Zamknij</button>
+      <button class="btn btn-primary" onclick="printContract()">🖨️ Drukuj / Zapisz PDF</button>
+    </div>
+  </div>
+</div>
+
+<!-- Create Gallery Modal -->
+<div class="modal-overlay" id="gallery-create-modal">
+  <div class="modal" style="max-width:520px">
+    <div class="modal-title">🖼️ Utwórz galerię dla klienta</div>
+
+    <div class="field">
+      <label>Nazwa galerii *</label>
+      <input type="text" id="gc-name" placeholder="Np. Wesele Kowalskich 2024">
+    </div>
+    <div class="field">
+      <label>Powiąż z sesją (opcjonalnie)</label>
+      <select id="gc-session">
+        <option value="">— bez powiązania —</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Folder źródłowy ze zdjęciami *</label>
+      <div style="display:flex;gap:6px">
+        <input type="text" id="gc-source" placeholder="Folder z gotowymi zdjęciami (JPG, PNG...)" style="flex:1" oninput="gcScanSource()">
+        <button type="button" class="btn btn-ghost btn-sm" style="flex-shrink:0"
+          onclick="openDirPicker(p => { document.getElementById('gc-source').value = p; gcScanSource(); })">📂</button>
+      </div>
+      <div id="gc-scan-info" style="font-size:.75rem;margin-top:4px;min-height:1.1em;color:var(--text-dim)"></div>
+    </div>
+    <div class="field">
+      <label>Folder wyjściowy galerii *</label>
+      <div style="display:flex;gap:6px">
+        <input type="text" id="gc-output" placeholder="Gdzie zapisać galerię dla klienta" style="flex:1">
+        <button type="button" class="btn btn-ghost btn-sm" style="flex-shrink:0"
+          onclick="openDirPicker(p => document.getElementById('gc-output').value = p)">📂</button>
+      </div>
+      <div style="font-size:.73rem;color:var(--text-dim);margin-top:3px">
+        Zostanie tam skopiowany folder <code>photos/</code> i plik <code>gallery.html</code>
+      </div>
+    </div>
+
+    <div id="gc-progress" style="display:none;margin-bottom:12px">
+      <div class="equip-progress"><div class="equip-progress-bar" id="gc-progress-bar" style="width:0%"></div></div>
+      <div id="gc-progress-label" style="font-size:.75rem;color:var(--text-dim);margin-top:4px">Przygotowywanie...</div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('gallery-create-modal')">Anuluj</button>
+      <button class="btn btn-primary" id="gc-create-btn" onclick="createGallery()">🖼️ Utwórz galerię</button>
+    </div>
+  </div>
+</div>
+
+<!-- Restore Backup Modal -->
+<div class="modal-overlay" id="restore-modal">
+  <div class="modal" style="max-width:560px">
+    <div class="modal-title">↩️ Przywróć dane z kopii zapasowej</div>
+
+    <div class="restore-warning">
+      ⚠️ <strong>Uwaga:</strong> Przywrócenie kopii zapasowej <strong>zastąpi wszystkie obecne dane</strong>
+      (sesje, sprzęt, kontakty, ustawienia). Operacja jest nieodwracalna.
+    </div>
+
+    <!-- Tabs -->
+    <div class="email-tabs" style="margin-bottom:12px">
+      <button class="email-tab active" id="restore-tab-list" onclick="switchRestoreTab('list')">📋 Ostatnie kopie</button>
+      <button class="email-tab" id="restore-tab-browse" onclick="switchRestoreTab('browse')">📂 Wybierz z dysku</button>
+    </div>
+
+    <!-- Tab: lista kopii z konfigurowanego folderu -->
+    <div id="restore-panel-list">
+      <div id="restore-backup-list" style="border:1px solid var(--border);border-radius:8px;max-height:220px;overflow-y:auto;margin-bottom:12px">
+        <div class="dirpicker-loading">⏳ Ładowanie listy kopii...</div>
+      </div>
+    </div>
+
+    <!-- Tab: przeglądarka plików -->
+    <div id="restore-panel-browse" style="display:none">
+      <div class="dirpicker-roots" id="restore-picker-roots"></div>
+      <div class="dirpicker-breadcrumb" id="restore-picker-breadcrumb">Ładowanie...</div>
+      <div class="dirpicker-list" id="restore-picker-list">
+        <div class="dirpicker-loading">⏳ Ładowanie...</div>
+      </div>
+    </div>
+
+    <!-- Wybrany plik + info -->
+    <div id="restore-selected-wrap" style="display:none">
+      <div class="restore-info-box selected" id="restore-info-box">
+        <div class="ri-row"><span class="ri-label">Plik:</span><span id="ri-name" style="color:var(--text);word-break:break-all"></span></div>
+        <div class="ri-row"><span class="ri-label">Data kopii:</span><span id="ri-date" style="color:var(--text)"></span></div>
+        <div class="ri-row"><span class="ri-label">Rozmiar:</span><span id="ri-size" style="color:var(--text)"></span></div>
+        <div class="ri-row"><span class="ri-label">Sesje:</span><span id="ri-sessions" style="color:var(--text)"></span></div>
+        <div class="ri-row"><span class="ri-label">Kontakty:</span><span id="ri-contacts" style="color:var(--text)"></span></div>
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('restore-modal')">Anuluj</button>
+      <button class="btn btn-danger" id="restore-confirm-btn" disabled onclick="restoreConfirm()">↩️ Przywróć dane</button>
+    </div>
+  </div>
+</div>
+
+<!-- Directory Picker Modal -->
+<div class="modal-overlay dirpicker-overlay" id="dirpicker-overlay">
+  <div class="modal dirpicker-modal">
+    <div class="modal-title">📁 Wybierz folder kopii zapasowych</div>
+
+    <div class="dirpicker-roots" id="dirpicker-roots"></div>
+
+    <div class="dirpicker-breadcrumb" id="dirpicker-breadcrumb">
+      Ładowanie...
+    </div>
+
+    <div class="dirpicker-list" id="dirpicker-list">
+      <div class="dirpicker-loading">⏳ Ładowanie katalogów...</div>
+    </div>
+
+    <div class="dirpicker-newdir">
+      <input type="text" id="dirpicker-newname" placeholder="Nazwa nowego folderu..." maxlength="64"
+        onkeydown="if(event.key==='Enter') dirPickerMkdir()">
+      <button class="btn btn-ghost btn-sm" onclick="dirPickerMkdir()">➕ Utwórz folder</button>
+    </div>
+
+    <div class="dirpicker-selected" id="dirpicker-selected"></div>
+
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="dirPickerCancel()">Anuluj</button>
+      <button class="btn btn-primary" id="dirpicker-confirm" onclick="dirPickerConfirm()">✅ Wybierz ten folder</button>
+    </div>
+  </div>
+</div>
+
+<!-- Hidden print area -->
+<div id="print-area"></div>
+
+<input type="file" id="import-file" accept=".json" style="display:none" onchange="importData(event)">
+
+<script>
+// ── State ──────────────────────────────────────────────────────────────
+let state = {
+  apiKey: '',
+  sessions: [],
+  equipment: [],
+  chatHistory: [],
+  prefs: { notif: false },
+  studio: { name: '', spec: 'event' },
+  contacts: [],
+  backup: { path: '', intervalHours: 24, autoEnabled: false, lastBackup: null },
+  galleries: [],
+  profile: {
+    cennik: '',
+    styl: '',
+    zasady: []
+  }
+};
+
+let currentDetailId = null;
+
+// ── Persistence ────────────────────────────────────────────────────────
+function loadState() {
+  try {
+    const saved = localStorage.getItem('foto_studio_state') || localStorage.getItem('focusmaster_state');
+    if (saved) Object.assign(state, JSON.parse(saved));
+  } catch {}
+  if (!state.equipment.length) state.equipment = defaultEquipment();
+  if (!state.profile) state.profile = { cennik: '', styl: '', zasady: [], packages: [] };
+  if (!state.profile.zasady?.length) state.profile.zasady = defaultZasady();
+  if (!state.profile.packages) state.profile.packages = defaultPackages();
+  if (!state.contacts) state.contacts = [];
+}
+
+function saveState() {
+  localStorage.setItem('foto_studio_state', JSON.stringify(state));
+}
+
+function defaultEquipment() {
+  return [
+    { id: uid(), cat: 'Aparaty', name: 'Aparat główny (body)', checked: false },
+    { id: uid(), cat: 'Aparaty', name: 'Aparat zapasowy (body)', checked: false },
+    { id: uid(), cat: 'Obiektywy', name: 'Obiektyw portretowy (85mm / 50mm)', checked: false },
+    { id: uid(), cat: 'Obiektywy', name: 'Obiektyw szerokokątny (24-70mm)', checked: false },
+    { id: uid(), cat: 'Obiektywy', name: 'Teleobiektyw (70-200mm)', checked: false },
+    { id: uid(), cat: 'Oświetlenie', name: 'Lampa błyskowa główna', checked: false },
+    { id: uid(), cat: 'Oświetlenie', name: 'Lampa błyskowa zapasowa', checked: false },
+    { id: uid(), cat: 'Oświetlenie', name: 'Dyfuzor do lampy', checked: false },
+    { id: uid(), cat: 'Akcesoria', name: 'Statywy (2 szt.)', checked: false },
+    { id: uid(), cat: 'Akcesoria', name: 'Baterie do aparatów (naładowane)', checked: false },
+    { id: uid(), cat: 'Akcesoria', name: 'Ładowarka do baterii', checked: false },
+    { id: uid(), cat: 'Karty i nośniki', name: 'Karty pamięci (min. 4 szt.)', checked: false },
+    { id: uid(), cat: 'Karty i nośniki', name: 'Czytnik kart', checked: false },
+    { id: uid(), cat: 'Inne', name: 'Torba / plecak fotograficzny', checked: false },
+    { id: uid(), cat: 'Inne', name: 'Umowa z klientem', checked: false },
+  ];
+}
+
+function defaultZasady() {
+  return [
+    {
+      id: uid(), enabled: true,
+      title: 'BRAK PLIKÓW RAW',
+      text: 'Nigdy nie oddajemy surowych plików. Tłumaczenie: "Pliki RAW to półprodukt. Moja usługa to kompletne dzieło, w tym autorska obróbka, która definiuje mój styl."'
+    },
+    {
+      id: uid(), enabled: true,
+      title: 'TERMINY REALIZACJI',
+      text: 'Śluby – do 30 dni roboczych. Eventy – do 7 dni. Nie przyspieszamy bez opłaty "Express".'
+    },
+    {
+      id: uid(), enabled: true,
+      title: 'NEGOCJACJE CENOWE',
+      text: 'Nie dajemy rabatów na hasło "bo inni mają taniej". Możemy jedynie odjąć element pakietu (np. album), by obniżyć cenę.'
+    },
+    {
+      id: uid(), enabled: true,
+      title: 'RETUSZ I AUTENTYCZNOŚĆ',
+      text: 'Retuszujemy niedoskonałości cery. Nie zmieniamy sylwetki ani rysów twarzy – trzymamy się autentyczności.'
+    },
+    {
+      id: uid(), enabled: true,
+      title: 'REZERWACJA TERMINU',
+      text: 'Rezerwujemy termin tylko po wpłacie zadatku 30% i podpisaniu umowy.'
+    },
+  ];
+}
+
+function uid() {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2);
+}
+
+// ── Nav ────────────────────────────────────────────────────────────────
+function switchView(name) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(name + '-view').classList.add('active');
+  document.querySelector(`[data-view="${name}"]`).classList.add('active');
+  if (name === 'dashboard') renderDashboard();
+  if (name === 'sessions')  renderSessions();
+  if (name === 'equipment') renderEquipment();
+  if (name === 'gallery')   renderGalleries();
+  if (name === 'settings')  loadSettingsUI();
+  if (name === 'contract')  fillContractFromStudio();
+  if (name === 'email')     loadInbox(1);
+}
+
+document.querySelectorAll('.nav-btn').forEach(btn => {
+  btn.addEventListener('click', () => switchView(btn.dataset.view));
+});
+
+// ── API Status ─────────────────────────────────────────────────────────
+function updateApiStatus() {
+  const el = document.getElementById('api-status');
+  if (state.apiKey) {
+    el.textContent = '✓ API aktywne';
+    el.className = 'ok';
+  } else {
+    el.textContent = 'Brak klucza API';
+    el.className = 'err';
+  }
+}
+
+// ── Dashboard ──────────────────────────────────────────────────────────
+const tips = [
+  'Zawsze fotografuj w formacie RAW – daje pełną kontrolę nad post-processingiem.',
+  'Na weselach ustaw ISO Auto z maksimum 6400 – oszczędzisz czas i nie przeoczysz momentów.',
+  'Reguła dwóch kart: zawsze karta główna + backup w aparacie, jeśli to możliwe.',
+  'Sprawdź lokalizację przed sesją – oświetlenie naturalne zmienia się o każdej porze.',
+  'Komunikacja z klientem to połowa sukcesu. Lista ujęć to must-have na ślub.',
+  'Na eventach ruszaj się dużo – różne kąty i dystanse dają bogatszy materiał.',
+  'Baterie ładuj zawsze dzień przed, a nie rano przed sesją.',
+  'Backup 3-2-1: 3 kopie, 2 nośniki, 1 poza lokalizacją.',
+  'Przy słabym oświetleniu: zwolnij migawkę, użyj stabilizacji i lampy z rozpraszaczem.',
+  'Umowa przed każdą sesją – chroni Ciebie i klienta.',
+];
+
+function renderDashboard() {
+  const now = new Date();
+  const upcoming = state.sessions
+    .filter(s => s.date && new Date(s.date) >= now && s.status !== 'anulowana')
+    .sort((a, b) => new Date(a.date) - new Date(b.date));
+
+  const thisMonth = state.sessions.filter(s => {
+    if (!s.date) return false;
+    const d = new Date(s.date);
+    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+  });
+
+  const revenue = thisMonth.reduce((sum, s) => sum + (Number(s.fee) || 0), 0);
+
+  document.getElementById('stats-grid').innerHTML = `
+    <div class="stat-card"><div class="val">${upcoming.length}</div><div class="lbl">Nadchodzące sesje</div></div>
+    <div class="stat-card"><div class="val">${state.sessions.length}</div><div class="lbl">Łącznie sesji</div></div>
+    <div class="stat-card"><div class="val">${thisMonth.length}</div><div class="lbl">Sesji w tym miesiącu</div></div>
+    <div class="stat-card"><div class="val">${revenue.toLocaleString('pl-PL')} zł</div><div class="lbl">Przychód w miesiącu</div></div>
+  `;
+
+  const tip = tips[Math.floor(Math.random() * tips.length)];
+  document.getElementById('tip-container').innerHTML = `
+    <div class="tip-card">
+      <div class="tip-label">💡 Porada dnia</div>
+      <div class="tip-text">${tip}</div>
+    </div>
+  `;
+
+  document.getElementById('upcoming-sessions').innerHTML = upcoming.slice(0, 3).map(s => `
+    <div class="session-card" onclick="openSessionDetail('${s.id}')">
+      <div class="s-head">
+        <span class="s-name">${s.name}</span>
+        <span class="s-type">${s.type}</span>
+        ${statusBadge(s.status)}
+      </div>
+      <div class="s-meta">
+        ${s.date ? `<span>📅 ${formatDate(s.date)}</span>` : ''}
+        ${s.time ? `<span>🕐 ${s.time}</span>` : ''}
+        ${s.location ? `<span>📍 ${s.location}</span>` : ''}
+      </div>
+    </div>`).join('') || '<div class="empty"><div class="icon">📅</div><p>Brak nadchodzących sesji.</p></div>';
+}
+
+function formatDate(d) {
+  return new Date(d).toLocaleDateString('pl-PL', { day: 'numeric', month: 'long', year: 'numeric' });
+}
+
+function statusBadge(status) {
+  const map = {
+    zaplanowana: ['badge-gold', 'Zaplanowana'],
+    potwierdzona: ['badge-green', 'Potwierdzona'],
+    'w trakcie': ['badge-green', 'W trakcie'],
+    ukończona: ['', 'Ukończona'],
+    anulowana: ['badge-red', 'Anulowana'],
+  };
+  const [cls, label] = map[status] || ['', status];
+  return `<span class="badge ${cls}">${label}</span>`;
+}
+
+// ── Sessions ───────────────────────────────────────────────────────────
+function renderSessions() {
+  const q = document.getElementById('session-search').value.toLowerCase();
+  const f = document.getElementById('session-filter').value;
+
+  const list = state.sessions
+    .filter(s => {
+      const matchQ = !q || s.name.toLowerCase().includes(q) || (s.location || '').toLowerCase().includes(q);
+      return matchQ && (!f || s.type === f);
+    })
+    .sort((a, b) => {
+      if (!a.date) return 1;
+      if (!b.date) return -1;
+      return new Date(b.date) - new Date(a.date);
+    });
+
+  document.getElementById('sessions-list').innerHTML = list.map(s => `
+    <div class="session-card" onclick="openSessionDetail('${s.id}')">
+      <div class="s-head">
+        <span class="s-name">${s.name}</span>
+        <span class="s-type">${s.type}</span>
+        ${statusBadge(s.status)}
+      </div>
+      <div class="s-meta">
+        ${s.date ? `<span>📅 ${formatDate(s.date)}</span>` : ''}
+        ${s.time ? `<span>🕐 ${s.time}</span>` : ''}
+        ${s.location ? `<span>📍 ${s.location}</span>` : ''}
+        ${s.fee ? `<span>💰 ${Number(s.fee).toLocaleString('pl-PL')} zł</span>` : ''}
+      </div>
+    </div>`).join('') || '<div class="empty"><div class="icon">📷</div><p>Brak sesji. Kliknij + aby dodać.</p></div>';
+}
+
+function openNewSessionModal() {
+  document.getElementById('session-modal-title').textContent = 'Nowa sesja';
+  document.getElementById('session-edit-id').value = '';
+  ['s-name', 's-date', 's-location', 's-fee', 's-contact', 's-notes'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('s-time').value = '12:00';
+  document.getElementById('s-type').value = 'ślub';
+  document.getElementById('s-status').value = 'zaplanowana';
+  openModal('session-modal');
+}
+
+function saveSession() {
+  const name = document.getElementById('s-name').value.trim();
+  if (!name) { alert('Podaj nazwę sesji.'); return; }
+
+  const id = document.getElementById('session-edit-id').value || uid();
+  const session = {
+    id,
+    name,
+    type: document.getElementById('s-type').value,
+    status: document.getElementById('s-status').value,
+    date: document.getElementById('s-date').value,
+    time: document.getElementById('s-time').value,
+    location: document.getElementById('s-location').value.trim(),
+    fee: document.getElementById('s-fee').value,
+    contact: document.getElementById('s-contact').value.trim(),
+    notes: document.getElementById('s-notes').value.trim(),
+  };
+
+  const idx = state.sessions.findIndex(s => s.id === id);
+  if (idx >= 0) state.sessions[idx] = session;
+  else state.sessions.push(session);
+
+  saveState();
+  closeModal('session-modal');
+  renderSessions();
+  renderDashboard();
+}
+
+function openSessionDetail(id) {
+  const s = state.sessions.find(s => s.id === id);
+  if (!s) return;
+  currentDetailId = id;
+  document.getElementById('detail-title').textContent = `📅 ${s.name}`;
+  document.getElementById('detail-content').innerHTML = `
+    <div style="display:grid;gap:8px">
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:4px">
+        ${statusBadge(s.status)}
+        <span class="badge badge-gold">${s.type}</span>
+      </div>
+      ${row('📅 Data', s.date ? formatDate(s.date) : '—')}
+      ${row('🕐 Godzina', s.time || '—')}
+      ${row('📍 Lokalizacja', s.location || '—')}
+      ${row('💰 Wynagrodzenie', s.fee ? Number(s.fee).toLocaleString('pl-PL') + ' zł' : '—')}
+      ${row('📞 Kontakt', s.contact || '—')}
+      ${s.notes ? `<div style="margin-top:8px;padding:12px;background:var(--bg3);border-radius:8px;font-size:.85rem;white-space:pre-wrap">${s.notes}</div>` : ''}
+    </div>
+  `;
+  openModal('session-detail-modal');
+}
+
+function row(label, val) {
+  return `<div style="display:flex;gap:8px;font-size:.85rem;padding:4px 0"><span style="color:var(--text-dim);min-width:120px">${label}</span><span>${val}</span></div>`;
+}
+
+function editCurrentSession() {
+  const s = state.sessions.find(s => s.id === currentDetailId);
+  if (!s) return;
+  closeModal('session-detail-modal');
+  document.getElementById('session-modal-title').textContent = 'Edytuj sesję';
+  document.getElementById('session-edit-id').value = s.id;
+  document.getElementById('s-name').value = s.name;
+  document.getElementById('s-type').value = s.type;
+  document.getElementById('s-status').value = s.status;
+  document.getElementById('s-date').value = s.date || '';
+  document.getElementById('s-time').value = s.time || '';
+  document.getElementById('s-location').value = s.location || '';
+  document.getElementById('s-fee').value = s.fee || '';
+  document.getElementById('s-contact').value = s.contact || '';
+  document.getElementById('s-notes').value = s.notes || '';
+  openModal('session-modal');
+}
+
+function deleteCurrentSession() {
+  if (!confirm('Na pewno usunąć tę sesję?')) return;
+  state.sessions = state.sessions.filter(s => s.id !== currentDetailId);
+  saveState();
+  closeModal('session-detail-modal');
+  renderSessions();
+  renderDashboard();
+}
+
+// ── Equipment ──────────────────────────────────────────────────────────
+function renderEquipment() {
+  const items = state.equipment;
+  const checked = items.filter(i => i.checked).length;
+  const pct = items.length ? Math.round(checked / items.length * 100) : 0;
+  document.getElementById('equip-progress-bar').style.width = pct + '%';
+  document.getElementById('equip-progress-label').textContent = `${checked} / ${items.length} zaznaczonych (${pct}%)`;
+
+  const cats = [...new Set(items.map(i => i.cat))];
+  document.getElementById('equip-list').innerHTML = cats.map(cat => `
+    <div class="equip-group">
+      <div class="equip-group-title">${cat}</div>
+      ${items.filter(i => i.cat === cat).map(item => `
+        <div class="equip-item ${item.checked ? 'checked' : ''}">
+          <input type="checkbox" id="ec-${item.id}" ${item.checked ? 'checked' : ''} onchange="toggleEquip('${item.id}')">
+          <label for="ec-${item.id}">${item.name}</label>
+          <button class="remove-btn" onclick="removeEquip('${item.id}')">✕</button>
+        </div>`).join('')}
+    </div>`).join('');
+}
+
+function toggleEquip(id) {
+  const item = state.equipment.find(i => i.id === id);
+  if (item) { item.checked = !item.checked; saveState(); renderEquipment(); }
+}
+
+function checkAllEquip() {
+  state.equipment.forEach(i => i.checked = true);
+  saveState(); renderEquipment();
+}
+
+function uncheckAllEquip() {
+  state.equipment.forEach(i => i.checked = false);
+  saveState(); renderEquipment();
+}
+
+function removeEquip(id) {
+  state.equipment = state.equipment.filter(i => i.id !== id);
+  saveState(); renderEquipment();
+}
+
+function addEquipItem() {
+  const name = document.getElementById('equip-name').value.trim();
+  if (!name) { alert('Podaj nazwę sprzętu.'); return; }
+  state.equipment.push({ id: uid(), cat: document.getElementById('equip-cat').value, name, checked: false });
+  document.getElementById('equip-name').value = '';
+  saveState();
+  closeModal('equip-modal');
+  renderEquipment();
+}
+
+// ── Chat ───────────────────────────────────────────────────────────────
+const personas = {
+  ogolny: 'Jesteś Foto-Studio AI – ekspertem od fotografii eventowej. Pomagasz fotografom w planowaniu sesji, doborze sprzętu, technikach fotografowania i zarządzaniu studiem. Odpowiadasz po polsku, konkretnie i praktycznie.',
+  techniczny: 'Jesteś ekspertem technicznym fotografii. Specjalizujesz się w ustawieniach aparatu (ISO, przysłona, czas naświetlania), doborze obiektywów i oświetleniu. Odpowiadasz po polsku, używasz fachowej terminologii ale wyjaśniasz ją prostymi słowami.',
+  biznesowy: 'Jesteś doradcą biznesowym dla fotografów. Pomagasz w wycenie usług, pozyskiwaniu klientów, umowach i zarządzaniu studiem. Odpowiadasz po polsku, skupiasz się na aspektach finansowych i biznesowych.',
+  kreatywny: 'Jesteś kreatywnym doradcą fotograficznym. Inspirujesz do nowych ujęć, kompozycji i narracji wizualnej. Odpowiadasz po polsku, z entuzjazmem i kreatywnością.',
+  postprocessing: 'Jesteś ekspertem post-processingu. Doradzasz w obróbce zdjęć w Lightroom, Photoshop, Capture One. Odpowiadasz po polsku, szczegółowo i technicznie.',
+};
+
+function getSystemPrompt() {
+  const persona = document.getElementById('persona-select').value;
+  const base = personas[persona] || personas.ogolny;
+  const parts = [base];
+
+  if (state.studio?.name) parts.push(`Studio: ${state.studio.name} (${state.studio.spec})`);
+
+  const pkgs = state.profile?.packages?.filter(p => p.name);
+  if (pkgs?.length) {
+    const cennikText = pkgs.map(p =>
+      `• ${p.name}${p.price ? ' – ' + p.price + ' PLN' : ''}${p.duration ? ', ' + p.duration : ''}${p.desc ? ': ' + p.desc : ''}`
+    ).join('\n');
+    parts.push(`\n## CENNIK FOTOGRAFA\n${cennikText}`);
+  }
+
+  if (state.profile?.styl) parts.push(`\n## STYL I FILOZOFIA PRACY\n${state.profile.styl}`);
+
+  const activeZasady = state.profile?.zasady?.filter(z => z.enabled) || [];
+  if (activeZasady.length) {
+    const zasadyText = activeZasady.map(z => `• ${z.title}: ${z.text}`).join('\n');
+    parts.push(`\n## ZASADY I POLITYKA STUDIA\nPoniższe zasady obowiązują bezwzględnie. Używaj ich argumentacji gdy klient kwestionuje te kwestie:\n${zasadyText}`);
+  }
+
+  return parts.join('\n');
+}
+
+async function sendMessage() {
+  const input = document.getElementById('chat-input');
+  const text = input.value.trim();
+  if (!text) return;
+  if (!state.apiKey) {
+    appendMsg('error', '⚠️ Brak klucza API. Skonfiguruj go w Ustawieniach.');
+    return;
+  }
+
+  input.value = '';
+  input.style.height = 'auto';
+  appendMsg('user', text);
+  state.chatHistory.push({ role: 'user', content: text });
+  if (state.chatHistory.length > 20) state.chatHistory = state.chatHistory.slice(-20);
+
+  setTyping(true);
+  document.getElementById('chat-send').disabled = true;
+
+  try {
+    const res = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ apiKey: state.apiKey, system: getSystemPrompt(), messages: state.chatHistory })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      handleApiError(data, res.status);
+      return;
+    }
+    const reply = data.content?.[0]?.text || '(brak odpowiedzi)';
+    state.chatHistory.push({ role: 'assistant', content: reply });
+    saveState();
+    appendMsg('assistant', reply);
+  } catch (err) {
+    appendMsg('error', '❌ Błąd połączenia: ' + err.message);
+  } finally {
+    setTyping(false);
+    document.getElementById('chat-send').disabled = false;
+  }
+}
+
+function isBillingError(data, status) {
+  if (data.errorType === 'billing_error') return true;
+  if (status === 402) return true;
+  const msg = (data.error || '').toLowerCase();
+  return msg.includes('credit') || msg.includes('billing') || msg.includes('balance') || msg.includes('insufficient');
+}
+
+function handleApiError(data, status) {
+  if (isBillingError(data, status)) {
+    appendBillingError();
+  } else if (status === 401) {
+    appendMsg('error', '🔑 Nieprawidłowy klucz API. Sprawdź go w Ustawieniach.');
+  } else if (status === 429) {
+    appendMsg('error', '⏳ Zbyt wiele zapytań — poczekaj chwilę i spróbuj ponownie.');
+  } else {
+    appendMsg('error', '❌ ' + (data.error || 'Nieznany błąd API (' + status + ')'));
+  }
+}
+
+function appendBillingError() {
+  const el = document.getElementById('chat-messages');
+  const div = document.createElement('div');
+  div.className = 'msg billing-error';
+  div.innerHTML =
+    '<div class="be-title">💳 Brak środków na koncie Anthropic</div>' +
+    '<div class="be-body">' +
+      'Twój klucz API nie ma wystarczających środków, aby obsłużyć Asystenta AI.<br><br>' +
+      'Aby doładować konto:<br>' +
+      '1. Przejdź do konsoli Anthropic klikając przycisk poniżej<br>' +
+      '2. Wybierz <strong>Plans &amp; Billing → Credits</strong><br>' +
+      '3. Kliknij <strong>Add Credits</strong> i uzupełnij saldo' +
+    '</div>' +
+    '<a class="be-link" href="https://console.anthropic.com/settings/billing" target="_blank" rel="noopener">' +
+      '💳 Doładuj konto Anthropic →' +
+    '</a>';
+  el.appendChild(div);
+  el.scrollTop = el.scrollHeight;
+}
+
+function appendMsg(role, text) {
+  const el = document.getElementById('chat-messages');
+  const div = Object.assign(document.createElement('div'), { className: `msg ${role}`, textContent: text });
+  el.appendChild(div);
+  el.scrollTop = el.scrollHeight;
+}
+
+function setTyping(on) {
+  document.getElementById('typing').style.display = on ? 'block' : 'none';
+  if (on) document.getElementById('chat-messages').scrollTop = 9999;
+}
+
+function clearChat() {
+  if (!confirm('Wyczyścić historię rozmowy?')) return;
+  state.chatHistory = [];
+  saveState();
+  document.getElementById('chat-messages').innerHTML = '<div class="msg system-msg">Nowa rozmowa. Witaj!</div>';
+}
+
+document.getElementById('chat-input').addEventListener('input', function() {
+  this.style.height = 'auto';
+  this.style.height = Math.min(this.scrollHeight, 140) + 'px';
+});
+document.getElementById('chat-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+});
+
+function restoreChat() {
+  if (!state.chatHistory.length) return;
+  document.getElementById('chat-messages').innerHTML = '';
+  state.chatHistory.forEach(m => appendMsg(m.role, typeof m.content === 'string' ? m.content : ''));
+}
+
+// ── Calendar Widget (generic) ─────────────────────────────────────────
+const MONTHS_PL = ['Styczeń','Luty','Marzec','Kwiecień','Maj','Czerwiec','Lipiec','Sierpień','Wrzesień','Październik','Listopad','Grudzień'];
+const DAYS_PL   = ['Pn','Wt','Śr','Cz','Pt','So','Nd'];
+
+// Each calendar instance keeps its own state
+const calInstances = {};
+
+function calInit(key) {
+  const now = new Date();
+  calInstances[key] = { year: now.getFullYear(), month: now.getMonth() };
+}
+
+function calToggle(key, inputId, popupId) {
+  const popup = document.getElementById(popupId);
+  if (popup.classList.contains('open')) { popup.classList.remove('open'); return; }
+  const val = document.getElementById(inputId).value;
+  if (val) {
+    const d = new Date(val + 'T00:00:00');
+    calInstances[key] = { year: d.getFullYear(), month: d.getMonth() };
+  }
+  calRender(key, inputId, popupId);
+  popup.classList.add('open');
+}
+
+function calShift(key, dir, inputId, popupId) {
+  const c = calInstances[key];
+  c.month += dir;
+  if (c.month > 11) { c.month = 0; c.year++; }
+  if (c.month < 0)  { c.month = 11; c.year--; }
+  calRender(key, inputId, popupId);
+}
+
+function calRender(key, inputId, popupId) {
+  const c = calInstances[key];
+  const popup = document.getElementById(popupId);
+  popup.querySelector('.cal-month-label').textContent = `${MONTHS_PL[c.month]} ${c.year}`;
+
+  const selectedVal = document.getElementById(inputId).value;
+  const today = new Date(); today.setHours(0,0,0,0);
+  const sessionDates = new Set(state.sessions.map(s => s.date).filter(Boolean));
+
+  const firstDay = new Date(c.year, c.month, 1);
+  const startOffset = (firstDay.getDay() + 6) % 7;
+  const daysInMonth = new Date(c.year, c.month + 1, 0).getDate();
+  const prevDays = new Date(c.year, c.month, 0).getDate();
+
+  let html = DAYS_PL.map(d => `<div class="cal-day-hdr">${d}</div>`).join('');
+  for (let i = startOffset - 1; i >= 0; i--)
+    html += `<div class="cal-day other-month">${prevDays - i}</div>`;
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dateStr = `${c.year}-${String(c.month + 1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const isToday    = new Date(c.year, c.month, d).getTime() === today.getTime();
+    const isSelected = dateStr === selectedVal;
+    const hasSession = sessionDates.has(dateStr);
+    const cls = ['cal-day', isToday && 'today', isSelected && 'selected', hasSession && 'has-session'].filter(Boolean).join(' ');
+    html += `<div class="${cls}" onclick="calPick('${dateStr}','${inputId}','${popupId}')">${d}</div>`;
+  }
+
+  const nextFill = (startOffset + daysInMonth) % 7;
+  for (let d = 1; d < (nextFill === 0 ? 1 : 8 - nextFill); d++)
+    html += `<div class="cal-day other-month">${d}</div>`;
+
+  popup.querySelector('.cal-grid').innerHTML = html;
+}
+
+function calPick(dateStr, inputId, popupId) {
+  document.getElementById(inputId).value = dateStr;
+  document.getElementById(popupId).classList.remove('open');
+}
+
+function calSyncInput(inputId, popupId, key) {
+  const val = document.getElementById(inputId).value;
+  if (val && document.getElementById(popupId).classList.contains('open')) {
+    const d = new Date(val + 'T00:00:00');
+    calInstances[key] = { year: d.getFullYear(), month: d.getMonth() };
+    calRender(key, inputId, popupId);
+  }
+}
+
+// ── Session calendar (modal) ──────────────────────────────────────────
+function initCal() { calInit('session'); }
+function toggleCal() { calToggle('session', 's-date', 'cal-popup'); }
+function calMove(dir) { calShift('session', dir, 's-date', 'cal-popup'); }
+function calSyncFromInput() { calSyncInput('s-date', 'cal-popup', 'session'); }
+
+// ── Contract deposit calendar ─────────────────────────────────────────
+function toggleCalDep() { calToggle('dep', 'c-deposit-date', 'cal-dep-popup'); }
+function calDepMove(dir) { calShift('dep', dir, 'c-deposit-date', 'cal-dep-popup'); }
+function calDepSyncFromInput() { calSyncInput('c-deposit-date', 'cal-dep-popup', 'dep'); }
+
+// Close any open calendar when clicking outside its date-wrap
+document.addEventListener('click', e => {
+  document.querySelectorAll('.cal-popup.open').forEach(popup => {
+    if (!popup.closest('.date-wrap').contains(e.target)) popup.classList.remove('open');
+  });
+});
+
+// ── Cennik — pakiety ──────────────────────────────────────────────────
+function defaultPackages() {
+  return [
+    { id: uid(), name: 'BASIC', price: '2500', duration: 'do 6h', desc: 'Reportaż, 300 zdjęć w galerii online' },
+    { id: uid(), name: 'PREMIUM', price: '4500', duration: 'do 10h', desc: 'Reportaż, album drukowany, 600 zdjęć' },
+    { id: uid(), name: 'Express +', price: '500', duration: '—', desc: 'Dopłata za realizację w 7 dni' },
+  ];
+}
+
+function renderPackages() {
+  const list = document.getElementById('packages-list');
+  if (!list) return;
+  const pkgs = state.profile.packages || [];
+  list.innerHTML = pkgs.map(p => `
+    <div class="package-item">
+      <div class="package-head">
+        <input type="text" value="${p.name}" placeholder="Nazwa pakietu" oninput="updatePkg('${p.id}','name',this.value)" style="font-weight:700">
+        <button class="btn btn-danger btn-sm" style="padding:4px 8px" onclick="deletePkg('${p.id}')">✕</button>
+      </div>
+      <div class="package-price">
+        <input type="number" value="${p.price}" placeholder="Cena" min="0" oninput="updatePkg('${p.id}','price',this.value)" style="max-width:110px">
+        <span>PLN</span>
+        <input type="text" value="${p.duration}" placeholder="Czas trwania" oninput="updatePkg('${p.id}','duration',this.value)">
+      </div>
+      <textarea rows="2" placeholder="Opis zawartości pakietu..." oninput="updatePkg('${p.id}','desc',this.value)">${p.desc}</textarea>
+    </div>`).join('');
+}
+
+function updatePkg(id, field, val) {
+  const p = state.profile.packages.find(p => p.id === id);
+  if (p) p[field] = val;
+}
+
+function addPackage() {
+  if (!state.profile.packages) state.profile.packages = [];
+  state.profile.packages.push({ id: uid(), name: 'NOWY PAKIET', price: '', duration: '', desc: '' });
+  renderPackages();
+}
+
+function deletePkg(id) {
+  state.profile.packages = state.profile.packages.filter(p => p.id !== id);
+  renderPackages();
+}
+
+// ── Profile / Zasady ──────────────────────────────────────────────────
+function renderZasady() {
+  const list = document.getElementById('zasady-list');
+  if (!list) return;
+  list.innerHTML = state.profile.zasady.map(z => `
+    <div class="zasada-item ${z.enabled ? 'active' : ''}" id="zasada-${z.id}">
+      <div class="zasada-header" onclick="toggleZasadaExpand('${z.id}')">
+        <span class="zasada-title">${z.title}</span>
+        <button class="zasada-expand-btn" title="Rozwiń/zwiń">✏️</button>
+        <label class="toggle" onclick="event.stopPropagation()">
+          <input type="checkbox" ${z.enabled ? 'checked' : ''} onchange="toggleZasada('${z.id}')">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      <div class="zasada-body">
+        <div class="field" style="margin-bottom:0">
+          <label>Tytuł</label>
+          <input type="text" value="${z.title}" oninput="updateZasadaTitle('${z.id}', this.value)" style="margin-bottom:6px">
+          <label>Treść / argumentacja</label>
+          <textarea oninput="updateZasadaText('${z.id}', this.value)">${z.text}</textarea>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-top:8px">
+          <button class="btn btn-danger btn-sm" onclick="deleteZasada('${z.id}')">🗑️ Usuń</button>
+          <button class="btn btn-primary btn-sm" onclick="saveProfile(event)">💾 Zapisz</button>
+        </div>
+      </div>
+    </div>`).join('') + `
+  <button class="btn btn-ghost btn-sm" style="margin-top:4px;width:100%" onclick="addZasada()">➕ Dodaj własną zasadę</button>`;
+}
+
+function toggleZasadaExpand(id) {
+  const el = document.getElementById('zasada-' + id);
+  el.classList.toggle('expanded');
+}
+
+function toggleZasada(id) {
+  const z = state.profile.zasady.find(z => z.id === id);
+  if (z) { z.enabled = !z.enabled; saveState(); renderZasady(); }
+}
+
+function updateZasadaTitle(id, val) {
+  const z = state.profile.zasady.find(z => z.id === id);
+  if (z) { z.title = val; document.querySelector(`#zasada-${id} .zasada-title`).textContent = val; }
+}
+
+function updateZasadaText(id, val) {
+  const z = state.profile.zasady.find(z => z.id === id);
+  if (z) z.text = val;
+}
+
+function deleteZasada(id) {
+  if (!confirm('Usunąć tę zasadę?')) return;
+  state.profile.zasady = state.profile.zasady.filter(z => z.id !== id);
+  saveState(); renderZasady();
+}
+
+function addZasada() {
+  state.profile.zasady.push({ id: uid(), enabled: true, title: 'NOWA ZASADA', text: '' });
+  saveState(); renderZasady();
+  // auto-expand the new one
+  const last = state.profile.zasady.at(-1);
+  setTimeout(() => document.getElementById('zasada-' + last.id)?.classList.add('expanded'), 50);
+}
+
+function saveProfile(e) {
+  state.profile.styl = document.getElementById('profile-styl').value.trim();
+  // packages are updated live via updatePkg(); just persist
+  saveState();
+  const btn = e?.target;
+  if (btn) { const orig = btn.textContent; btn.textContent = '✅ Zapisano!'; setTimeout(() => btn.textContent = orig, 1500); }
+}
+
+function loadProfileUI() {
+  const p = state.profile;
+  document.getElementById('profile-styl').value = p.styl || '';
+  renderPackages();
+  renderZasady();
+}
+
+// ── Walidacja IBAN i rozpoznawanie banku ──────────────────────────────
+const BANK_MAP = {
+  '1010': 'Narodowy Bank Polski (NBP)',
+  '1020': 'PKO Bank Polski',
+  '1025': 'PKO Bank Polski',
+  '1030': 'BNP Paribas Bank Polska',
+  '1044': 'BNP Paribas Bank Polska',
+  '1050': 'ING Bank \u015al\u0105ski',
+  '1060': 'Bank BPH',
+  '1090': 'Santander Bank Polska',
+  '1140': 'mBank',
+  '1160': 'Bank Millennium',
+  '1240': 'Bank Pekao SA',
+  '1280': 'Bank Pekao SA',
+  '1320': 'Bank Pocztowy',
+  '1440': 'Nest Bank',
+  '1530': 'Bank \u0141\u0105czno\u015bci',
+  '1540': 'BO\u015a Bank',
+  '1560': 'Getin Bank',
+  '1580': 'Getin Noble Bank',
+  '1590': 'Deutsche Bank Polska',
+  '1610': 'FCE Bank Polska',
+  '1680': 'Plus Bank',
+  '1750': 'Raiffeisen Bank Polska',
+  '1760': 'Bank BPS',
+  '1870': 'Nest Bank',
+  '1930': 'Bank BPS',
+  '1940': 'Credit Agricole Bank Polska',
+  '2030': 'BNP Paribas Bank Polska',
+  '2060': 'BNP Paribas Bank Polska',
+  '2090': 'VeloBank',
+  '2120': 'Citi Handlowy',
+  '2130': 'Toyota Bank Polska',
+  '2160': 'Toyota Bank Polska',
+  '2190': 'DNB Bank Polska',
+  '2200': 'Alior Bank',
+  '2320': 'Santander Consumer Bank',
+  '2330': 'T-Mobile Us\u0142ugi Bankowe',
+  '2340': 'Volkswagen Bank Polska',
+  '2360': 'Volkswagen Bank Polska',
+  '2390': 'VeloBank',
+  '2480': 'Santander Bank Polska',
+  '2490': 'Alior Bank',
+};
+
+function ibanMod97(numStr) {
+  let rem = 0;
+  for (const ch of numStr) rem = (rem * 10 + parseInt(ch)) % 97;
+  return rem;
+}
+
+function validatePolishIBAN(raw) {
+  const clean = raw.replace(/\s/g, '').toUpperCase();
+  let digits;
+
+  if (clean.startsWith('PL')) {
+    if (clean.length !== 28) return { valid: false, msg: 'Polski IBAN musi mieć 28 znak\u00f3w (PL + 26 cyfr)' };
+    if (!/^\d{26}$/.test(clean.slice(2))) return { valid: false, msg: 'Po "PL" mog\u0105 wyst\u0105pi\u0107 tylko cyfry' };
+    digits = clean.slice(2);
+  } else {
+    if (!/^\d{26}$/.test(clean)) return { valid: false, msg: 'Numer rachunku powinien mie\u0107 26 cyfr lub zaczyna\u0107 si\u0119 od "PL"' };
+    digits = clean;
+  }
+
+  // MOD-97 check: rearrange (BBAN + "PL" + check) then replace letters
+  const rearranged = digits.slice(2) + '2521' + digits.slice(0, 2); // PL = 25,21
+  if (ibanMod97(rearranged) !== 1) return { valid: false, msg: 'Nieprawid\u0142owa suma kontrolna — sprawd\u017a numer' };
+
+  const bankCode = digits.slice(2, 6); // positions 3-6 of NRB = first 4 of sort code
+  const bank = BANK_MAP[bankCode] || null;
+  return { valid: true, digits, bank, bankCode };
+}
+
+function formatIBAN(digits) {
+  // Format as: PL XX XXXX XXXX XXXX XXXX XXXX XXXX
+  const d = digits.replace(/\D/g, '');
+  const full = 'PL' + d;
+  return full.match(/.{1,4}/g)?.join(' ') || full;
+}
+
+function onIbanInput(el) {
+  const statusEl = document.getElementById('iban-status');
+  const raw = el.value;
+  if (!raw.trim()) { statusEl.textContent = ''; return; }
+
+  const result = validatePolishIBAN(raw);
+
+  if (!result.valid) {
+    statusEl.style.color = 'var(--danger)';
+    statusEl.textContent = '\u274c ' + result.msg;
+    return;
+  }
+
+  // Format the input nicely
+  el.value = formatIBAN(result.digits);
+
+  // Auto-fill bank name
+  if (result.bank) {
+    document.getElementById('studio-bank').value = result.bank;
+    statusEl.style.color = 'var(--success)';
+    statusEl.textContent = '\u2705 Prawid\u0142owy numer \u2022 ' + result.bank;
+  } else {
+    statusEl.style.color = 'var(--success)';
+    statusEl.textContent = '\u2705 Prawid\u0142owy numer (bank nierozpoznany \u2014 wpisz r\u0119cznie)';
+  }
+}
+
+// ── Liczba na słowa (PL) ───────────────────────────────────────────────
+const _ONES = ['','jeden','dwa','trzy','cztery','pi\u0119\u0107','sze\u015b\u0107','siedem','osiem','dziewi\u0119\u0107',
+  'dziesi\u0119\u0107','jedena\u015bcie','dwana\u015bcie','trzyna\u015bcie','czterna\u015bcie','pi\u0119tna\u015bcie',
+  'szesna\u015bcie','siedemna\u015bcie','osiemna\u015bcie','dziewi\u0119tna\u015bcie'];
+const _TENS = ['','','dwadzie\u015bcia','trzydzie\u015bci','czterdzie\u015bci','pi\u0119\u0107dziesi\u0105t',
+  'sze\u015b\u0107dziesi\u0105t','siedemdziesi\u0105t','osiemdziesi\u0105t','dziewi\u0119\u0107dziesi\u0105t'];
+const _HUND = ['','sto','dwie\u015bcie','trzysta','czterysta','pi\u0119\u0107set',
+  'sze\u015b\u0107set','siedemset','osiemset','dziewi\u0119\u0107set'];
+
+function _inflect(n, one, few, many) {
+  const l2 = n % 100, l1 = n % 10;
+  if (l2 >= 11 && l2 <= 19) return many;
+  if (l1 === 1) return one;
+  if (l1 >= 2 && l1 <= 4) return few;
+  return many;
+}
+
+function _n2w(n) {
+  if (n === 0) return 'zero';
+  let r = '';
+  if (n >= 1000000) {
+    const m = Math.floor(n / 1000000);
+    r += _n2w(m) + ' ' + _inflect(m, 'milion', 'miliony', 'milion\u00f3w') + ' ';
+    n %= 1000000;
+  }
+  if (n >= 1000) {
+    const t = Math.floor(n / 1000);
+    r += (t === 1 ? 'tysi\u0105c' : _n2w(t) + ' ' + _inflect(t, 'tysi\u0105c', 'tysi\u0105ce', 'tysi\u0119cy')) + ' ';
+    n %= 1000;
+  }
+  if (n >= 100) { r += _HUND[Math.floor(n / 100)] + ' '; n %= 100; }
+  if (n >= 20)  { r += _TENS[Math.floor(n / 10)]  + ' '; n %= 10; }
+  if (n > 0)    { r += _ONES[n] + ' '; }
+  return r.trim();
+}
+
+function feeToWords(amount) {
+  const total = parseFloat(amount);
+  if (!amount || isNaN(total)) return '';
+  const zl = Math.floor(total);
+  const gr = Math.round((total - zl) * 100);
+  let result = _n2w(zl) + ' ' + _inflect(zl, 'z\u0142oty', 'z\u0142ote', 'z\u0142otych');
+  result += gr > 0
+    ? ' ' + _n2w(gr) + ' ' + _inflect(gr, 'grosz', 'grosze', 'groszy')
+    : ' 00/100';
+  return result.charAt(0).toUpperCase() + result.slice(1);
+}
+
+// ── Contract ───────────────────────────────────────────────────────────
+function fillContractFromStudio() {
+  const s = state.studio || {};
+  if (s.name) document.getElementById('c-photo-name').value = s.name;
+  const sd = document.getElementById('c-sign-date');
+  if (!sd.value) sd.value = new Date().toISOString().slice(0, 10);
+  populateSessionPicker();
+}
+
+function populateSessionPicker() {
+  const sel = document.getElementById('c-session-pick');
+  if (!sel) return;
+  const current = sel.value;
+  // Only sessions that aren't cancelled
+  const sessions = state.sessions
+    .filter(s => s.status !== 'anulowana')
+    .sort((a, b) => {
+      if (!a.date) return 1;
+      if (!b.date) return -1;
+      return new Date(a.date) - new Date(b.date);
+    });
+
+  sel.innerHTML = '<option value="">— wybierz sesję —</option>' +
+    sessions.map(s => {
+      const dateStr = s.date ? new Date(s.date + 'T00:00:00').toLocaleDateString('pl-PL', { day: 'numeric', month: 'short', year: 'numeric' }) : 'brak daty';
+      return `<option value="${s.id}">${s.name} · ${s.type} · ${dateStr}</option>`;
+    }).join('');
+
+  if (current) sel.value = current;
+}
+
+// Map session type to contract service type
+const SESSION_TYPE_MAP = {
+  'ślub':      'reportaż ślubny',
+  'chrzciny':  'fotografia chrzcin',
+  'komunia':   'fotografia komunijna',
+  'urodziny':  'fotografia urodzinowa',
+  'firmowe':   'fotografia firmowa',
+  'portret':   'sesja portretowa',
+  'inne':      'fotografia eventowa',
+};
+
+function loadSessionIntoContract() {
+  const id = document.getElementById('c-session-pick').value;
+  if (!id) { alert('Wybierz sesję z listy.'); return; }
+  const s = state.sessions.find(s => s.id === id);
+  if (!s) return;
+
+  // Event details
+  const mappedType = SESSION_TYPE_MAP[s.type] || 'fotografia eventowa';
+  document.getElementById('c-type').value = mappedType;
+  if (s.date) document.getElementById('c-event-date').value = s.date;
+  if (s.time) document.getElementById('c-event-time').value = s.time;
+  if (s.location) document.getElementById('c-location').value = s.location;
+  if (s.fee) {
+    document.getElementById('c-fee').value = s.fee;
+    autoCalcDeposit();
+  }
+
+  // Client name from session name (if not already filled)
+  const clientField = document.getElementById('c-client-name');
+  if (!clientField.value) clientField.value = s.name;
+
+  // Contact
+  if (s.contact) {
+    const phone = document.getElementById('c-client-phone');
+    const email = document.getElementById('c-client-email');
+    if (s.contact.includes('@')) email.value = s.contact;
+    else phone.value = s.contact;
+  }
+
+  // Notes → extra
+  if (s.notes) {
+    const extra = document.getElementById('c-extra');
+    if (!extra.value) extra.value = s.notes;
+  }
+}
+
+function getContractData() {
+  const v = id => document.getElementById(id)?.value?.trim() || '';
+  return {
+    photoName:      v('c-photo-name'),
+    photoCompany:   v('c-photo-company'),
+    photoAddress:   v('c-photo-address'),
+    photoContact:   v('c-photo-contact'),
+    clientName:     v('c-client-name'),
+    clientAddress:  v('c-client-address'),
+    clientPhone:    v('c-client-phone'),
+    clientEmail:    v('c-client-email'),
+    type:           v('c-type'),
+    eventDate:      v('c-event-date'),
+    eventTime:      v('c-event-time'),
+    duration:       v('c-event-duration'),
+    location:       v('c-location'),
+    fee:            v('c-fee'),
+    deposit:        v('c-deposit'),
+    depositDate:    v('c-deposit-date'),
+    balanceWhen:    v('c-balance-when'),
+    photoCount:     v('c-photo-count'),
+    delivery:       v('c-delivery'),
+    format:         v('c-format'),
+    retouch:        v('c-retouch'),
+    extra:          v('c-extra'),
+    signPlace:      v('c-sign-place'),
+    signDate:       v('c-sign-date'),
+  };
+}
+
+function fmtDate(d) {
+  if (!d) return '......................';
+  return new Date(d + 'T00:00:00').toLocaleDateString('pl-PL', { day: 'numeric', month: 'long', year: 'numeric' });
+}
+
+function blank(val, fallback) {
+  return val || (fallback || '<span style="display:inline-block;min-width:120px;border-bottom:1px solid #aaa">&nbsp;</span>');
+}
+
+function buildContractHTML(d) {
+  const balance    = (d.fee && d.deposit) ? (parseFloat(d.fee) - parseFloat(d.deposit)).toLocaleString('pl-PL') : '......................';
+  const feeStr     = d.fee     ? parseFloat(d.fee).toLocaleString('pl-PL') + ' zł'     : '......................';
+  const depositStr = d.deposit ? parseFloat(d.deposit).toLocaleString('pl-PL') + ' zł' : '......................';
+  const extraHTML  = d.extra   ? '<h2>\u00a77. Postanowienia dodatkowe</h2><p>' + d.extra.replace(/\n/g, '<br>') + '</p>' : '';
+  const finalPara  = d.extra   ? '\u00a78' : '\u00a77';
+  const rodoPara   = d.extra   ? '\u00a79' : '\u00a78';
+
+  const slownie = d.fee ? feeToWords(d.fee) : '';
+
+  const fillLine = (w) => '<span style="display:inline-block;border-bottom:1px solid #888;min-width:' + (w || 200) + 'px">&nbsp;</span>';
+
+  let bankInfo;
+  if (state.studio && state.studio.iban) {
+    bankInfo = ' <strong>' + state.studio.iban + '</strong>' + (state.studio.bank ? ' (' + state.studio.bank + ')' : '');
+  } else {
+    bankInfo = '<br>Numer rachunku: ' + fillLine(260) + '<br>Nazwa banku:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;' + fillLine(200);
+  }
+
+  const executorInfo = [
+    '<strong>Wykonawca:</strong> ' + blank(d.photoName) + (d.photoCompany ? ', ' + d.photoCompany : ''),
+    d.photoAddress ? 'Adres: ' + d.photoAddress : '',
+    d.photoContact ? 'Kontakt: ' + d.photoContact : ''
+  ].filter(Boolean).join('<br>');
+
+  const clientInfo = [
+    '<strong>Zamawiający:</strong> ' + blank(d.clientName),
+    d.clientAddress ? 'Adres: ' + d.clientAddress : '',
+    (d.clientPhone ? 'Telefon: ' + d.clientPhone : '') + (d.clientEmail ? (d.clientPhone ? '&nbsp;&nbsp;' : '') + 'E-mail: ' + d.clientEmail : '')
+  ].filter(Boolean).join('<br>');
+
+  return '<div class="contract-doc" id="contract-doc-inner">' +
+    '<h1>UMOWA O \u015aWIADCZENIE US\u0141UG FOTOGRAFICZNYCH</h1>' +
+    '<p class="doc-subtitle">zawarta dnia ' + fmtDate(d.signDate) + ' w ' + blank(d.signPlace, 'miejscowo\u015bci') + '</p>' +
+
+    '<h2>\u00a7 1. Strony umowy</h2>' +
+    '<p>' + executorInfo + '</p>' +
+    '<p>' + clientInfo + '</p>' +
+
+    '<h2>\u00a7 2. Przedmiot umowy</h2>' +
+    '<p>Wykonawca zobowi\u0105zuje si\u0119 do wykonania us\u0142ugi fotograficznej: <strong>' + blank(d.type) + '</strong>.</p>' +
+    '<div class="doc-row"><span class="doc-label">Data realizacji:</span><span class="doc-val">' + fmtDate(d.eventDate) + (d.eventTime ? ', godz. ' + d.eventTime : '') + '</span></div>' +
+    '<div class="doc-row"><span class="doc-label">Czas trwania:</span><span class="doc-val">' + blank(d.duration) + '</span></div>' +
+    '<div class="doc-row"><span class="doc-label">Miejsce realizacji:</span><span class="doc-val">' + blank(d.location) + '</span></div>' +
+
+    '<h2>\u00a7 3. Wynagrodzenie</h2>' +
+    '<p>Strony ustalaj\u0105 \u0142\u0105czne wynagrodzenie za wykonanie us\u0142ugi na kwot\u0119: <strong>' + feeStr + '</strong><br>(s\u0142ownie: <em>' + (slownie || fillLine(300)) + '</em>).</p>' +
+    '<ol>' +
+    '<li>Zamawiaj\u0105cy zobowi\u0105zuje si\u0119 do wp\u0142aty zadatku w wysoko\u015bci <strong>' + depositStr + '</strong> w terminie do dnia ' + fmtDate(d.depositDate) + ' na rachunek bankowy Wykonawcy:' + bankInfo + '. Wp\u0142ata zadatku jest warunkiem rezerwacji terminu.</li>' +
+    '<li>Pozosta\u0142a kwota: <strong>' + balance + ' z\u0142</strong> p\u0142atna ' + blank(d.balanceWhen, 'w ustalonym terminie') + '.</li>' +
+    '<li>W przypadku rezygnacji przez Zamawiaj\u0105cego wp\u0142acony zadatek nie podlega zwrotowi. W przypadku rezygnacji przez Wykonawc\u0119 zobowi\u0105zany jest on do zwrotu dwukrotno\u015bci zadatku.</li>' +
+    '</ol>' +
+
+    '<h2>\u00a7 4. Realizacja i dostarczenie materia\u0142\u00f3w</h2>' +
+    '<ol>' +
+    '<li>Wykonawca zobowi\u0105zuje si\u0119 dostarczy\u0107 <strong>' + blank(d.photoCount, 'uzgodn ion\u0105 liczb\u0119') + '</strong> zdj\u0119\u0107 w terminie <strong>' + blank(d.delivery) + '</strong>.</li>' +
+    '<li>Zdj\u0119cia zostan\u0105 dostarczone w formie: ' + blank(d.format) + '.</li>' +
+    '<li>Zakres retuszu obejmuje: ' + blank(d.retouch, 'korekt\u0119 kolor\u00f3w, kadrowanie i retusz') + '.</li>' +
+    '<li>Pliki RAW (surowe) nie s\u0105 przedmiotem umowy i nie zostan\u0105 przekazane Zamawiaj\u0105cemu. Pliki RAW stanowi\u0105 materia\u0142 roboczy Wykonawcy.</li>' +
+    '<li>Wykonawca zastrzega sobie prawo do artystycznej interpretacji zam\u00f3wienia.</li>' +
+    '</ol>' +
+
+    '<h2>\u00a7 5. Prawa autorskie</h2>' +
+    '<p>Wykonawca udziela Zamawiaj\u0105cemu niewy\u0142\u0105cznej, nieograniczonej terytorialnie licencji na korzystanie z wykonanych fotografii wy\u0142\u0105cznie do u\u017cytku prywatnego i rodzinnego. Jakiekolwiek komercyjne lub publiczne wykorzystanie wymaga pisemnej zgody Wykonawcy. Wykonawca ma prawo do prezentowania zdj\u0119\u0107 w portfolio oraz mediach spo\u0142eczno\u015bciowych jako przyk\u0142ad\u00f3w swojej pracy, chyba \u017ce Zamawiaj\u0105cy zastrze\u017ce inaczej na pi\u015bmie.</p>' +
+
+    '<h2>\u00a7 6. Odpowiedzialno\u015b\u0107</h2>' +
+    '<ol>' +
+    '<li>Wykonawca nie ponosi odpowiedzialno\u015bci za brak mo\u017cliwo\u015bci wykonania zdj\u0119\u0107 z przyczyn niezale\u017cnych od niego (warunki atmosferyczne, awaria sprz\u0119tu po podj\u0119ciu wszelkich mo\u017cliwych \u015brodk\u00f3w zapobiegczych, si\u0142a wy\u017csza).</li>' +
+    '<li>W sytuacji losowej uniemo\u017cliwiaj\u0105cej Wykonawcy realizacj\u0119 zlecenia, zobowi\u0105zuje si\u0119 on do zapewnienia zast\u0119pstwa lub zwrotu wp\u0142aconych \u015brodk\u00f3w.</li>' +
+    '<li>Zamawiaj\u0105cy zapewnia Wykonawcy swobod\u0119 poruszania si\u0119 po miejscu realizacji us\u0142ugi oraz niezb\u0119dny czas na wykonanie zdj\u0119\u0107.</li>' +
+    '</ol>' +
+
+    extraHTML +
+
+    '<h2>' + finalPara + '. Postanowienia ko\u0144cowe</h2>' +
+    '<p>Umow\u0119 sporz\u0105dzono w dw\u00f3ch jednobrzmi\u0105cych egzemplarzach, po jednym dla ka\u017cdej ze stron. W sprawach nieuregulowanych niniejsz\u0105 umow\u0105 zastosowanie maj\u0105 przepisy Kodeksu cywilnego.</p>' +
+
+    '<div class="sig-row">' +
+    '<div class="sig-box"><p>...................................</p><p><strong>Wykonawca</strong></p><p>' + (d.photoName || 'Fotograf') + '</p></div>' +
+    '<div class="sig-box"><p>...................................</p><p><strong>Zamawiaj\u0105cy</strong></p><p>' + (d.clientName || 'Klient') + '</p></div>' +
+    '</div>' +
+
+    '<div style="border-top:2px dashed #bbb;margin-top:40px;padding-top:20px">' +
+    '<h2 style="margin-top:0">' + rodoPara + '. O\u015bwiadczenie o ochronie danych osobowych (RODO)</h2>' +
+    '<p style="font-size:.82rem;line-height:1.7;color:#222">Zgodnie z art. 13 Rozporz\u0105dzenia Parlamentu Europejskiego i Rady (UE) 2016/679 z dnia 27 kwietnia 2016\u00a0r. (RODO) informujemy:</p>' +
+    '<ol style="font-size:.82rem;line-height:1.7;color:#222">' +
+    '<li><strong>Administrator danych:</strong> ' + blank(d.photoName) + (d.photoCompany ? ', ' + d.photoCompany : '') + (d.photoContact ? ', ' + d.photoContact : '') + '.</li>' +
+    '<li><strong>Cel przetwarzania:</strong> Dane osobowe Zamawiaj\u0105cego (imi\u0119 i nazwisko, adres, telefon, e-mail) przetwarzane s\u0105 wy\u0142\u0105cznie w celu realizacji niniejszej umowy oraz wype\u0142nienia obowi\u0105zk\u00f3w prawnych ci\u0105\u017c\u0105cych na Administratorze, w szczeg\u00f3lno\u015bci wynikaj\u0105cych z przepis\u00f3w podatkowych.</li>' +
+    '<li><strong>Podstawa prawna:</strong> Art. 6 ust. 1 lit.\u00a0b RODO (wykonanie umowy) oraz art. 6 ust. 1 lit.\u00a0c RODO (obowi\u0105zek prawny).</li>' +
+    '<li><strong>Okres przechowywania:</strong> Dane b\u0119d\u0105 przechowywane przez okres niezb\u0119dny do realizacji umowy oraz przez wymagany przepisami prawa okres archiwizacji dokument\u00f3w (do 5 lat od zako\u0144czenia roku podatkowego).</li>' +
+    '<li><strong>Prawa osoby, kt\u00f3rej dane dotycz\u0105:</strong> Zamawiaj\u0105cy ma prawo dost\u0119pu do danych, ich sprostowania, usuni\u0119cia lub ograniczenia przetwarzania, prawo do przenoszenia danych oraz prawo wniesienia skargi do Prezesa Urz\u0119du Ochrony Danych Osobowych (UODO).</li>' +
+    '<li><strong>Udost\u0119pnianie danych:</strong> Dane nie b\u0119d\u0105 przekazywane podmiotom trzecim, z wyj\u0105tkiem podmiot\u00f3w uprawnionych na podstawie przepis\u00f3w prawa (np. organy podatkowe) lub realizuj\u0105cych us\u0142ugi niezb\u0119dne do wykonania umowy (np. laboratorium fotograficzne, drukarnia).</li>' +
+    '<li><strong>Dobrowolno\u015b\u0107:</strong> Podanie danych jest dobrowolne, jednak niezb\u0119dne do zawarcia i realizacji umowy.</li>' +
+    '</ol>' +
+    '<p style="font-size:.82rem;margin-top:12px;color:#222">Zamawiaj\u0105cy o\u015bwiadcza, \u017ce zapozna\u0142 si\u0119 z powy\u017csz\u0105 klauzul\u0105 informacyjn\u0105 dotycz\u0105c\u0105 przetwarzania danych osobowych i przyjmuje j\u0105 do wiadomo\u015bci.</p>' +
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:32px">' +
+    '<div></div>' +
+    '<div style="border-top:1px solid #888;padding-top:8px;text-align:center;font-size:.78rem;color:#555">' +
+    '<p style="margin-bottom:4px">Data: ' + fillLine(100) + '</p>' +
+    '<p style="margin:16px 0 4px">...................................</p>' +
+    '<p><strong>Podpis Zamawiaj\u0105cego</strong></p>' +
+    '<p>' + (d.clientName || 'Klient') + '</p>' +
+    '</div>' +
+    '</div>' +
+    '</div>' +
+
+    '</div>';
+
+}
+
+function previewContract() {
+  const d = getContractData();
+  const missing = [];
+  if (!d.photoName)  missing.push('Imię i nazwisko fotografa');
+  if (!d.clientName) missing.push('Imię i nazwisko klienta');
+  if (!d.eventDate)  missing.push('Data wykonania usługi');
+  if (!d.location)   missing.push('Miejsce realizacji');
+  if (!d.fee)        missing.push('Wynagrodzenie');
+  if (missing.length) {
+    alert('Wypełnij wymagane pola:\n• ' + missing.join('\n• '));
+    return;
+  }
+  try {
+    document.getElementById('contract-preview-content').innerHTML = buildContractHTML(d);
+    openModal('contract-preview-modal');
+  } catch (err) {
+    alert('Błąd generowania umowy: ' + err.message);
+    console.error(err);
+  }
+}
+
+function printContract() {
+  const printArea = document.getElementById('print-area');
+  printArea.innerHTML = document.getElementById('contract-preview-content').innerHTML;
+  window.print();
+  setTimeout(() => { printArea.innerHTML = ''; }, 1000);
+}
+
+// ── Settings ───────────────────────────────────────────────────────────
+function saveApiKey() {
+  const key = document.getElementById('api-key-input').value.trim();
+  if (!key) { alert('Podaj klucz API.'); return; }
+  state.apiKey = key;
+  saveState();
+  updateApiStatus();
+  alert('✅ Klucz API zapisany!');
+}
+
+function clearApiKey() {
+  if (!confirm('Usunąć klucz API?')) return;
+  state.apiKey = '';
+  document.getElementById('api-key-input').value = '';
+  saveState();
+  updateApiStatus();
+}
+
+function saveStudioSettings() {
+  state.studio = {
+    name: document.getElementById('studio-name').value.trim(),
+    spec: document.getElementById('studio-spec').value,
+    iban: document.getElementById('studio-iban').value.trim(),
+    bank: document.getElementById('studio-bank').value.trim(),
+  };
+  saveState();
+  alert('✅ Ustawienia studia zapisane!');
+}
+
+function toggleTheme() {
+  state.prefs.lightTheme = document.getElementById('pref-light').checked;
+  applyTheme();
+  saveState();
+}
+
+function applyTheme() {
+  document.body.classList.toggle('light', !!state.prefs.lightTheme);
+}
+
+function savePrefs() {
+  state.prefs.notif       = document.getElementById('pref-notif').checked;
+  state.prefs.depositPct  = parseInt(document.getElementById('pref-deposit-pct').value) || 30;
+  saveState();
+}
+
+function autoCalcDeposit() {
+  const fee = parseFloat(document.getElementById('c-fee').value);
+  if (!fee || isNaN(fee)) {
+    document.getElementById('deposit-hint').textContent = '';
+    return;
+  }
+  const pct     = state.prefs?.depositPct || 30;
+  const deposit = Math.round(fee * pct / 100);
+  document.getElementById('c-deposit').value = deposit;
+  document.getElementById('deposit-hint').textContent =
+    pct + '% z ' + fee.toLocaleString('pl-PL') + ' zł = ' + deposit.toLocaleString('pl-PL') + ' zł zadatku';
+}
+
+function exportData() {
+  const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+  const a = Object.assign(document.createElement('a'), {
+    href: URL.createObjectURL(blob),
+    download: `foto_studio_backup_${new Date().toISOString().slice(0, 10)}.json`
+  });
+  a.click();
+}
+
+function importDataClick() { document.getElementById('import-file').click(); }
+
+function importData(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const imported = JSON.parse(ev.target.result);
+      if (confirm('Zaimportować dane? Zastąpi to obecne dane.')) {
+        Object.assign(state, imported);
+        saveState();
+        loadSettingsUI();
+        renderDashboard();
+        alert('✅ Dane zaimportowane!');
+      }
+    } catch { alert('❌ Błąd odczytu pliku.'); }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+}
+
+function resetAllData() {
+  if (!confirm('Usunąć WSZYSTKIE dane? Tej operacji nie można cofnąć!')) return;
+  if (!confirm('Potwierdź raz jeszcze – wszystkie sesje, sprzęt i ustawienia zostaną usunięte.')) return;
+  localStorage.removeItem('foto_studio_state');
+  localStorage.removeItem('focusmaster_state');
+  location.reload();
+}
+
+function loadSettingsUI() {
+  document.getElementById('api-key-input').value = state.apiKey || '';
+  document.getElementById('studio-name').value = state.studio?.name || '';
+  document.getElementById('studio-spec').value = state.studio?.spec || 'event';
+  document.getElementById('studio-iban').value = state.studio?.iban || '';
+  document.getElementById('studio-bank').value = state.studio?.bank || '';
+  loadGmailSettingsUI();
+  document.getElementById('pref-light').checked       = state.prefs?.lightTheme || false;
+  document.getElementById('pref-notif').checked       = state.prefs?.notif || false;
+  document.getElementById('pref-deposit-pct').value   = state.prefs?.depositPct || 30;
+  loadProfileUI();
+  loadBackupSettingsUI();
+}
+
+// ── Contacts ───────────────────────────────────────────────────────────
+function saveContacts() { saveState(); }
+
+function autoCollectContact(fromStr) {
+  if (!fromStr) return;
+  const match = fromStr.match(/^(.*?)\s*<(.+@.+)>$/) || fromStr.match(/^(.+@.+)$/);
+  if (!match) return;
+  const email = (match[2] || match[1]).trim().toLowerCase();
+  const name  = (match[2] ? match[1].replace(/^"|"$/g,'').trim() : '') || email;
+  if (!email || email === (state.gmail?.address || '').toLowerCase()) return;
+  if (!state.contacts.find(c => c.email.toLowerCase() === email)) {
+    state.contacts.push({ id: uid(), name, email, phone: '' });
+    saveContacts();
+  }
+}
+
+function renderContacts() {
+  const query = (document.getElementById('contacts-search')?.value || '').toLowerCase();
+  const list  = document.getElementById('contacts-list');
+  if (!list) return;
+  const filtered = state.contacts.filter(c =>
+    !query || c.name.toLowerCase().includes(query) || c.email.toLowerCase().includes(query)
+  ).sort((a,b) => a.name.localeCompare(b.name, 'pl'));
+
+  if (!filtered.length) {
+    list.innerHTML = '<div class="empty"><div class="icon">👥</div><p>' +
+      (query ? 'Brak wyników.' : 'Brak kontaktów.<br>Zostaną dodane automatycznie<br>przy odbieraniu e-maili.') + '</p></div>';
+    return;
+  }
+  list.innerHTML = filtered.map(c => {
+    const initials = getInitials(c.name);
+    return '<div class="contact-item">' +
+      '<div class="contact-avatar">' + initials + '</div>' +
+      '<div class="contact-info">' +
+        '<div class="contact-name">' + escHtml(c.name) + '</div>' +
+        '<div class="contact-email">' + escHtml(c.email) + (c.phone ? ' · ' + escHtml(c.phone) : '') + '</div>' +
+      '</div>' +
+      '<div class="contact-actions">' +
+        '<button class="btn btn-ghost btn-sm" title="Napisz e-mail" onclick="composeToContact(\'' + escHtml(c.email) + '\',\'' + escHtml(c.name) + '\')">✉️</button>' +
+        '<button class="btn btn-ghost btn-sm" title="Edytuj" onclick="openEditContact(\'' + c.id + '\')">✏️</button>' +
+        '<button class="btn btn-ghost btn-sm" title="Usuń" onclick="deleteContact(\'' + c.id + '\')">🗑️</button>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+
+let editingContactId = null;
+
+function openAddContact() {
+  editingContactId = null;
+  document.getElementById('ac-name').value  = '';
+  document.getElementById('ac-email').value = '';
+  document.getElementById('ac-phone').value = '';
+  document.querySelector('#add-contact-modal .modal-title').textContent = '👤 Dodaj kontakt';
+  openModal('add-contact-modal');
+}
+
+function openEditContact(id) {
+  const c = state.contacts.find(x => x.id === id);
+  if (!c) return;
+  editingContactId = id;
+  document.getElementById('ac-name').value  = c.name;
+  document.getElementById('ac-email').value = c.email;
+  document.getElementById('ac-phone').value = c.phone || '';
+  document.querySelector('#add-contact-modal .modal-title').textContent = '✏️ Edytuj kontakt';
+  openModal('add-contact-modal');
+}
+
+function saveContact() {
+  const name  = document.getElementById('ac-name').value.trim();
+  const email = document.getElementById('ac-email').value.trim().toLowerCase();
+  const phone = document.getElementById('ac-phone').value.trim();
+  if (!name || !email) { alert('Wypełnij imię i adres e-mail.'); return; }
+  if (editingContactId) {
+    const c = state.contacts.find(x => x.id === editingContactId);
+    if (c) { c.name = name; c.email = email; c.phone = phone; }
+  } else {
+    if (state.contacts.find(c => c.email === email)) { alert('Kontakt z tym adresem już istnieje.'); return; }
+    state.contacts.push({ id: uid(), name, email, phone });
+  }
+  saveContacts();
+  renderContacts();
+  closeModal('add-contact-modal');
+}
+
+function deleteContact(id) {
+  if (!confirm('Usunąć kontakt?')) return;
+  state.contacts = state.contacts.filter(c => c.id !== id);
+  saveContacts();
+  renderContacts();
+}
+
+function composeToContact(email, name) {
+  switchEmailTab('inbox');
+  openCompose();
+  document.getElementById('compose-to').value = name ? '"' + name + '" <' + email + '>' : email;
+}
+
+function parseCSVRow(line) {
+  const fields = [];
+  let cur = '', inQ = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (ch === '"') {
+      if (inQ && line[i+1] === '"') { cur += '"'; i++; }
+      else inQ = !inQ;
+    } else if (ch === ',' && !inQ) {
+      fields.push(cur); cur = '';
+    } else {
+      cur += ch;
+    }
+  }
+  fields.push(cur);
+  return fields;
+}
+
+function importContactsCSV(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const status = document.getElementById('contacts-sync-status');
+  status.style.display = 'block';
+  status.textContent = 'Importowanie...';
+  document.getElementById('contacts-csv-help').style.display = 'none';
+
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const lines = e.target.result.split(/\r?\n/).filter(l => l.trim());
+      if (lines.length < 2) throw new Error('Plik CSV jest pusty lub nieprawidłowy.');
+
+      const headers = parseCSVRow(lines[0]).map(h => h.trim());
+
+      // Find all email and phone column indices
+      const emailCols = headers.reduce((acc, h, i) => { if (/e-mail.*value/i.test(h)) acc.push(i); return acc; }, []);
+      const phoneCols = headers.reduce((acc, h, i) => { if (/phone.*value/i.test(h)) acc.push(i); return acc; }, []);
+      const nameIdx   = headers.findIndex(h => /^name$/i.test(h));
+
+      if (nameIdx === -1 && emailCols.length === 0)
+        throw new Error('Nie rozpoznano formatu CSV. Użyj eksportu "Format Google CSV".');
+
+      let added = 0, skipped = 0;
+      for (let i = 1; i < lines.length; i++) {
+        const row = parseCSVRow(lines[i]);
+        const name  = (row[nameIdx] || '').trim();
+        const phone = phoneCols.map(c => (row[c] || '').trim()).find(v => v) || '';
+        const emails = emailCols.map(c => (row[c] || '').trim().toLowerCase()).filter(v => v && v.includes('@'));
+
+        for (const email of emails) {
+          if (state.contacts.find(c => c.email === email)) { skipped++; continue; }
+          state.contacts.push({ id: uid(), name: name || email, email, phone });
+          added++;
+        }
+      }
+
+      saveContacts();
+      renderContacts();
+      status.textContent = `✅ Zaimportowano: ${added} kontaktów, ${skipped} już istniało.`;
+    } catch (err) {
+      status.textContent = '❌ ' + err.message;
+      document.getElementById('contacts-csv-help').style.display = 'block';
+    }
+    event.target.value = '';
+  };
+  reader.readAsText(file, 'UTF-8');
+}
+
+async function syncGoogleContacts() {
+  const creds = gmailCreds();
+  if (!creds.emailAddress || !creds.appPassword) {
+    alert('Skonfiguruj konto Gmail w Ustawieniach.'); return;
+  }
+  const btn    = document.getElementById('sync-contacts-btn');
+  const status = document.getElementById('contacts-sync-status');
+  btn.disabled = true; btn.textContent = '⏳';
+  status.style.display = 'block'; status.textContent = 'Pobieranie kontaktów z Google...';
+  try {
+    const res  = await fetch('/api/contacts/google', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(creds) });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+
+    let added = 0, updated = 0;
+    data.contacts.forEach(gc => {
+      const existing = state.contacts.find(c => c.email === gc.email);
+      if (existing) {
+        if (gc.name && gc.name !== gc.email) { existing.name = gc.name; updated++; }
+        if (gc.phone && !existing.phone)     { existing.phone = gc.phone; }
+      } else {
+        state.contacts.push({ id: uid(), name: gc.name, email: gc.email, phone: gc.phone });
+        added++;
+      }
+    });
+    saveContacts();
+    renderContacts();
+    status.textContent = `✅ Zsynchronizowano: ${added} nowych, ${updated} zaktualizowanych (łącznie ${data.contacts.length} z Google).`;
+  } catch (err) {
+    status.textContent = '❌ ' + err.message;
+  } finally {
+    btn.disabled = false; btn.textContent = '🔄';
+  }
+}
+
+function switchEmailTab(tab) {
+  document.getElementById('tab-inbox').classList.toggle('active', tab === 'inbox');
+  document.getElementById('tab-contacts').classList.toggle('active', tab === 'contacts');
+  document.getElementById('inbox-panel').classList.toggle('hidden', tab !== 'inbox');
+  document.getElementById('contacts-panel').classList.toggle('active', tab === 'contacts');
+  if (tab === 'contacts') renderContacts();
+}
+
+// ── Autocomplete ────────────────────────────────────────────────────────
+let acIndex = -1;
+
+function acFilter(query) {
+  const list = document.getElementById('compose-ac-list');
+  if (!query || query.length < 1) { acClose(); return; }
+  const q = query.toLowerCase();
+  const hits = state.contacts.filter(c =>
+    c.name.toLowerCase().includes(q) || c.email.toLowerCase().includes(q)
+  ).slice(0, 8);
+  if (!hits.length) { acClose(); return; }
+  acIndex = -1;
+  list.innerHTML = hits.map((c, i) => {
+    const initials = getInitials(c.name);
+    return '<div class="autocomplete-item" data-email="' + escHtml(c.email) + '" data-name="' + escHtml(c.name) + '" onmousedown="acPick(\'' + escHtml(c.name) + '\',\'' + escHtml(c.email) + '\')">' +
+      '<div class="autocomplete-avatar">' + initials + '</div>' +
+      '<div><div class="autocomplete-name">' + escHtml(c.name) + '</div><div class="autocomplete-email">' + escHtml(c.email) + '</div></div>' +
+    '</div>';
+  }).join('');
+  list.classList.add('open');
+}
+
+function acPick(name, email) {
+  document.getElementById('compose-to').value = name ? '"' + name + '" <' + email + '>' : email;
+  acClose();
+}
+
+function acClose() {
+  const list = document.getElementById('compose-ac-list');
+  if (list) { list.classList.remove('open'); list.innerHTML = ''; }
+  acIndex = -1;
+}
+
+function acKeydown(e) {
+  const list = document.getElementById('compose-ac-list');
+  const items = list?.querySelectorAll('.autocomplete-item');
+  if (!items?.length) return;
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    acIndex = Math.min(acIndex + 1, items.length - 1);
+    items.forEach((el,i) => el.classList.toggle('selected', i === acIndex));
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    acIndex = Math.max(acIndex - 1, -1);
+    items.forEach((el,i) => el.classList.toggle('selected', i === acIndex));
+  } else if (e.key === 'Enter' && acIndex >= 0) {
+    e.preventDefault();
+    const item = items[acIndex];
+    acPick(item.dataset.name, item.dataset.email);
+  } else if (e.key === 'Escape') {
+    acClose();
+  }
+}
+
+// ── Email ──────────────────────────────────────────────────────────────
+let emailCurrentPage = 1;
+let emailTotalPages  = 1;
+let currentEmailMsg  = null;
+
+function gmailCreds() {
+  return { emailAddress: state.gmail?.address, appPassword: state.gmail?.password };
+}
+
+function saveGmailSettings() {
+  state.gmail = {
+    address:  document.getElementById('gmail-address').value.trim(),
+    password: document.getElementById('gmail-apppassword').value.trim(),
+  };
+  saveState();
+  loadGmailSettingsUI();
+  alert('✅ Dane Gmail zapisane!');
+}
+
+function loadGmailSettingsUI() {
+  document.getElementById('gmail-address').value     = state.gmail?.address  || '';
+  document.getElementById('gmail-apppassword').value = state.gmail?.password || '';
+  const label = document.getElementById('email-account-label');
+  if (label) label.textContent = state.gmail?.address || '';
+}
+
+async function testGmailConnection() {
+  const statusEl = document.getElementById('gmail-test-status');
+  statusEl.style.color = 'var(--text-dim)';
+  statusEl.textContent = '⏳ Łączę...';
+  try {
+    const res  = await fetch('/api/email/test', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(gmailCreds()) });
+    const data = await res.json();
+    if (data.ok) { statusEl.style.color = 'var(--success)'; statusEl.textContent = '✅ Połączenie działa!'; }
+    else          { statusEl.style.color = 'var(--danger)';  statusEl.textContent = '❌ ' + data.error; }
+  } catch { statusEl.style.color = 'var(--danger)'; statusEl.textContent = '❌ Błąd sieci'; }
+}
+
+async function loadInbox(page = 1) {
+  const creds = gmailCreds();
+  if (!creds.emailAddress || !creds.appPassword) {
+    document.getElementById('email-list-items').innerHTML =
+      '<div class="empty"><div class="icon">📧</div><p>Skonfiguruj konto Gmail<br>w Ustawieniach.</p></div>';
+    return;
+  }
+  emailCurrentPage = page;
+  document.getElementById('email-list-items').innerHTML =
+    '<div class="empty"><div class="icon">⏳</div><p>Ładowanie skrzynki...</p></div>';
+
+  try {
+    const res  = await fetch('/api/email/inbox', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...creds, page }) });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+
+    emailTotalPages = data.pages || 1;
+    document.getElementById('inbox-count').textContent = '(' + data.total + ')';
+    renderEmailList(data.messages);
+    updateEmailPager(page, data.pages);
+  } catch (err) {
+    document.getElementById('email-list-items').innerHTML =
+      '<div class="empty"><div class="icon">❌</div><p>' + err.message + '</p></div>';
+  }
+}
+
+function renderEmailList(messages) {
+  const el = document.getElementById('email-list-items');
+  if (!messages.length) { el.innerHTML = '<div class="empty"><p>Brak wiadomości.</p></div>'; return; }
+  messages.forEach(m => autoCollectContact(m.from));
+  el.innerHTML = messages.map(m => {
+    const date = m.date ? new Date(m.date).toLocaleDateString('pl-PL', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
+    return `<div class="email-item ${m.seen ? '' : 'unread'}" onclick="loadMessage(${m.uid}, this)">
+      <div class="ei-from">${m.seen ? '' : '<span class="ei-unread-dot"></span>'}<span>${escHtml(m.from)}</span></div>
+      <div class="ei-subject">${escHtml(m.subject)}</div>
+      <div class="ei-date">${date}</div>
+    </div>`;
+  }).join('');
+}
+
+function updateEmailPager(page, pages) {
+  const pager = document.getElementById('email-pager');
+  if (pages <= 1) { pager.style.display = 'none'; return; }
+  pager.style.display = 'flex';
+  document.getElementById('pager-label').textContent = 'Strona ' + page + ' / ' + pages;
+  document.getElementById('pager-prev').disabled = page <= 1;
+  document.getElementById('pager-next').disabled = page >= pages;
+}
+
+function emailPage(dir) { loadInbox(emailCurrentPage + dir); }
+
+async function searchInbox() {
+  const query = document.getElementById('inbox-search').value.trim();
+  if (!query) { clearSearch(); return; }
+
+  const creds = gmailCreds();
+  if (!creds.emailAddress || !creds.appPassword) return;
+
+  document.getElementById('inbox-list-label').textContent = 'Wyniki: „' + query + '"';
+  document.getElementById('inbox-count').textContent = '';
+  document.getElementById('search-clear-btn').style.display = '';
+  document.getElementById('inbox-refresh-btn').style.display = 'none';
+  document.getElementById('email-pager').style.display = 'none';
+  document.getElementById('email-list-items').innerHTML =
+    '<div class="empty"><div class="icon">⏳</div><p>Szukam...</p></div>';
+
+  try {
+    const res  = await fetch('/api/email/search', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...creds, query }) });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+    document.getElementById('inbox-count').textContent = '(' + data.total + ' wyników)';
+    renderEmailList(data.messages);
+  } catch (err) {
+    document.getElementById('email-list-items').innerHTML =
+      '<div class="empty"><p>❌ ' + escHtml(err.message) + '</p></div>';
+  }
+}
+
+function clearSearch() {
+  document.getElementById('inbox-search').value = '';
+  document.getElementById('search-clear-btn').style.display = 'none';
+  document.getElementById('inbox-refresh-btn').style.display = '';
+  document.getElementById('inbox-list-label').textContent = 'Odebrane';
+  loadInbox(1);
+}
+
+async function loadMessage(uid, itemEl) {
+  document.querySelectorAll('.email-item').forEach(e => e.classList.remove('active'));
+  itemEl.classList.add('active');
+  itemEl.classList.remove('unread');
+  itemEl.querySelector('.ei-unread-dot')?.remove();
+
+  const detail = document.getElementById('email-detail-pane');
+  detail.innerHTML = '<div class="empty" style="margin-top:60px"><div class="icon">⏳</div><p>Ładowanie...</p></div>';
+  detail.classList.add('active');
+  document.getElementById('email-list-pane').classList.add('hidden');
+
+  try {
+    const res  = await fetch('/api/email/message', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...gmailCreds(), uid }) });
+    const msg  = await res.json();
+    if (!res.ok) throw new Error(msg.error);
+
+    currentEmailMsg = msg;
+    autoCollectContact(msg.from);
+    const date = msg.date ? new Date(msg.date).toLocaleString('pl-PL', { weekday:'long', year:'numeric', month:'long', day:'numeric', hour:'2-digit', minute:'2-digit' }) : '';
+    detail.innerHTML = `
+      <button class="btn btn-ghost btn-sm" onclick="backToList()" style="margin-bottom:14px">‹ Powrót do listy</button>
+      <div class="email-msg-card">
+        <div class="email-header">
+          <h2>${escHtml(msg.subject || '(brak tematu)')}</h2>
+          <div class="email-meta-row"><span class="label">Od:</span><span class="value">${escHtml(msg.from)}</span></div>
+          <div class="email-meta-row"><span class="label">Do:</span><span class="value">${escHtml(msg.to)}</span></div>
+          <div class="email-date-row">📅 ${date}</div>
+          <div class="email-actions">
+            <button class="btn btn-primary btn-sm" onclick="openReply(currentEmailMsg)">↩️ Odpowiedz</button>
+          </div>
+        </div>
+        <hr class="email-divider">
+        <div class="email-body">${escHtml(msg.text || '(brak treści)')}</div>
+      </div>`;
+  } catch (err) {
+    detail.innerHTML = '<div class="empty"><p>❌ ' + escHtml(err.message) + '</p></div>';
+  }
+}
+
+function backToList() {
+  document.getElementById('email-detail-pane').classList.remove('active');
+  document.getElementById('email-list-pane').classList.remove('hidden');
+}
+
+function openCompose() {
+  document.getElementById('compose-modal-title').textContent = '✏️ Nowy e-mail';
+  document.getElementById('compose-to').value      = '';
+  document.getElementById('compose-subject').value = '';
+  document.getElementById('compose-body').value    = '';
+  document.getElementById('compose-reply-to').value  = '';
+  document.getElementById('compose-message-id').value = '';
+  openModal('compose-modal');
+}
+
+function openReply(msg) {
+  document.getElementById('compose-modal-title').textContent = '↩️ Odpowiedź';
+  document.getElementById('compose-to').value      = msg.from || '';
+  document.getElementById('compose-subject').value = msg.subject.startsWith('Re:') ? msg.subject : 'Re: ' + msg.subject;
+  document.getElementById('compose-body').value    = '\n\n--- Oryginalna wiadomość ---\n' + (msg.text || '').slice(0, 500);
+  document.getElementById('compose-reply-to').value  = msg.from  || '';
+  document.getElementById('compose-message-id').value = msg.messageId || '';
+  openModal('compose-modal');
+}
+
+async function sendEmail() {
+  const to      = document.getElementById('compose-to').value.trim();
+  const subject = document.getElementById('compose-subject').value.trim();
+  const text    = document.getElementById('compose-body').value.trim();
+  if (!to || !subject || !text) { alert('Wypełnij: Do, Temat i Treść.'); return; }
+
+  const inReplyTo  = document.getElementById('compose-reply-to').value;
+  const references = document.getElementById('compose-message-id').value;
+
+  const btn = document.querySelector('#compose-modal .btn-primary');
+  btn.disabled = true; btn.textContent = '⏳ Wysyłam...';
+
+  try {
+    const res  = await fetch('/api/email/send', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...gmailCreds(), to, subject, text, inReplyTo, references }) });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+    closeModal('compose-modal');
+    alert('✅ E-mail wysłany!');
+  } catch (err) {
+    alert('❌ Błąd wysyłania: ' + err.message);
+  } finally {
+    btn.disabled = false; btn.textContent = '📤 Wyślij';
+  }
+}
+
+function escHtml(str) {
+  return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function getInitials(name) {
+  return name.split(' ').map(w => w[0] || '').join('').slice(0, 2).toUpperCase() || '?';
+}
+
+// ── Directory Picker ───────────────────────────────────────────────────
+let _dirPickerCallback = null;   // fn(selectedPath) called on confirm
+let _dirPickerCurrent  = null;   // current browsed path
+
+async function openDirPicker(callback) {
+  _dirPickerCallback = callback;
+  document.getElementById('dirpicker-newname').value = '';
+  document.getElementById('dirpicker-selected').classList.remove('visible');
+  document.getElementById('dirpicker-overlay').classList.add('open');
+
+  // Load roots
+  try {
+    const res  = await fetch('/api/fs/roots');
+    const data = await res.json();
+    const rootsEl = document.getElementById('dirpicker-roots');
+    rootsEl.innerHTML = data.roots.map(r =>
+      `<button class="dirpicker-root-btn" onclick="dirPickerBrowse('${escHtml(r.path)}')">${r.label}</button>`
+    ).join('');
+  } catch { }
+
+  // Browse home by default (or previously selected path)
+  const startPath = state.backup?.path || null;
+  await dirPickerBrowse(startPath);
+}
+
+async function dirPickerBrowse(dirPath) {
+  const listEl = document.getElementById('dirpicker-list');
+  const crumbEl = document.getElementById('dirpicker-breadcrumb');
+  listEl.innerHTML = '<div class="dirpicker-loading">⏳ Ładowanie...</div>';
+
+  try {
+    const res  = await fetch('/api/fs/browse?path=' + (dirPath ? encodeURIComponent(dirPath) : ''));
+    const data = await res.json();
+    if (data.error) { listEl.innerHTML = `<div class="dirpicker-loading">❌ ${escHtml(data.error)}</div>`; return; }
+
+    _dirPickerCurrent = data.current;
+
+    // Breadcrumb — show full path, highlight last segment
+    const parts = data.current.replace(/\\/g, '/').split('/').filter(Boolean);
+    crumbEl.innerHTML = (data.current.startsWith('/') ? '/' : '') +
+      parts.map((p, i) => i === parts.length - 1 ? `<strong>${escHtml(p)}</strong>` : escHtml(p)).join(' / ');
+
+    // Update selected indicator if current == already-chosen path
+    dirPickerUpdateSelected(data.current);
+
+    // List
+    let html = '';
+    if (data.parent !== null) {
+      html += `<div class="dirpicker-item up" onclick="dirPickerBrowse('${escHtml(data.parent)}')">
+        <span class="di-icon">⬆️</span><span class="di-name">.. (poziom wyżej)</span>
+      </div>`;
+    }
+    if (!data.dirs.length && !data.parent) {
+      html += '<div class="dirpicker-loading">Brak podfolderów</div>';
+    }
+    html += data.dirs.map(d =>
+      `<div class="dirpicker-item" onclick="dirPickerBrowse('${escHtml(d.path)}')">
+        <span class="di-icon">📁</span>
+        <span class="di-name">${escHtml(d.name)}</span>
+        <span style="font-size:.72rem;color:var(--gold);flex-shrink:0" onclick="event.stopPropagation();dirPickerSelect('${escHtml(d.path)}')">Wybierz ›</span>
+      </div>`
+    ).join('');
+    listEl.innerHTML = html;
+  } catch (err) {
+    listEl.innerHTML = `<div class="dirpicker-loading">❌ ${escHtml(err.message)}</div>`;
+  }
+}
+
+function dirPickerSelect(dirPath) {
+  _dirPickerCurrent = dirPath;
+  dirPickerUpdateSelected(dirPath);
+}
+
+function dirPickerUpdateSelected(dirPath) {
+  const el = document.getElementById('dirpicker-selected');
+  el.textContent = '✅ Wybrany folder: ' + dirPath;
+  el.classList.add('visible');
+  _dirPickerCurrent = dirPath;
+}
+
+async function dirPickerMkdir() {
+  const name = document.getElementById('dirpicker-newname').value.trim();
+  if (!name) { alert('Podaj nazwę nowego folderu.'); return; }
+  if (!_dirPickerCurrent) { alert('Najpierw przejdź do folderu, w którym chcesz utworzyć nowy katalog.'); return; }
+  try {
+    const res  = await fetch('/api/fs/mkdir', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ dirPath: _dirPickerCurrent, name })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+    document.getElementById('dirpicker-newname').value = '';
+    // Navigate into newly created dir
+    await dirPickerBrowse(data.path);
+    dirPickerSelect(data.path);
+  } catch (err) {
+    alert('❌ ' + err.message);
+  }
+}
+
+function dirPickerConfirm() {
+  if (!_dirPickerCurrent) { alert('Wybierz folder.'); return; }
+  document.getElementById('dirpicker-overlay').classList.remove('open');
+  if (_dirPickerCallback) _dirPickerCallback(_dirPickerCurrent);
+}
+
+function dirPickerCancel() {
+  document.getElementById('dirpicker-overlay').classList.remove('open');
+}
+
+// ── Gallery ────────────────────────────────────────────────────────────
+function renderGalleries() {
+  const list = document.getElementById('gallery-list');
+  if (!list) return;
+  const galleries = state.galleries || [];
+  if (!galleries.length) {
+    list.innerHTML = '<div class="empty"><div class="icon">🖼️</div><p>Brak galerii.<br>Kliknij „➕ Nowa galeria" aby utworzyć pierwszą.</p></div>';
+    return;
+  }
+  list.innerHTML = galleries.slice().reverse().map(g => {
+    const dt = g.created ? new Date(g.created).toLocaleDateString('pl-PL', { day:'numeric', month:'short', year:'numeric' }) : '—';
+    const preview = (g.previewFiles || []).slice(0, 5).map(f =>
+      `<img src="/api/gallery/thumb?path=${encodeURIComponent(g.photosDir + '/' + f)}" onerror="this.style.display='none'">`
+    ).join('');
+    return `<div class="gallery-card">
+      <div class="gc-head">
+        <span class="gc-name">🖼️ ${escHtml(g.name)}</span>
+        <span class="badge badge-gold">${g.count} zdjęć</span>
+      </div>
+      ${preview ? `<div class="gallery-preview">${preview}</div>` : ''}
+      <div class="gc-meta">
+        ${g.sessionName ? `<span>📅 ${escHtml(g.sessionName)}</span>` : ''}
+        <span>📁 ${escHtml(g.outputDir)}</span>
+        <span>🗓️ ${dt}</span>
+      </div>
+      <div class="gc-actions">
+        <button class="btn btn-primary btn-sm" onclick="openGallery('${g.id}')">🌐 Otwórz galerię</button>
+        <button class="btn btn-ghost btn-sm" onclick="copyGalleryPath('${g.id}')">📋 Kopiuj ścieżkę</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteGallery('${g.id}')">🗑️</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function openCreateGalleryModal() {
+  document.getElementById('gc-name').value   = '';
+  document.getElementById('gc-source').value = '';
+  document.getElementById('gc-output').value = '';
+  document.getElementById('gc-scan-info').textContent = '';
+  document.getElementById('gc-progress').style.display = 'none';
+  document.getElementById('gc-create-btn').disabled = false;
+  // fill session picker
+  const sel = document.getElementById('gc-session');
+  sel.innerHTML = '<option value="">— bez powiązania —</option>' +
+    (state.sessions || [])
+      .filter(s => s.status !== 'anulowana')
+      .sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0))
+      .map(s => `<option value="${s.id}">${escHtml(s.name)}${s.date ? ' · ' + formatDate(s.date) : ''}</option>`)
+      .join('');
+  openModal('gallery-create-modal');
+}
+
+let _gcScanTimer = null;
+function gcScanSource() {
+  clearTimeout(_gcScanTimer);
+  _gcScanTimer = setTimeout(async () => {
+    const src   = document.getElementById('gc-source').value.trim();
+    const infoEl = document.getElementById('gc-scan-info');
+    if (!src) { infoEl.textContent = ''; return; }
+    infoEl.style.color = 'var(--text-dim)';
+    infoEl.textContent = '⏳ Skanowanie...';
+    try {
+      const res  = await fetch('/api/gallery/scan?path=' + encodeURIComponent(src));
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      infoEl.style.color = data.count ? 'var(--success)' : 'var(--danger)';
+      infoEl.textContent = data.count
+        ? `✅ Znaleziono ${data.count} zdjęć`
+        : '❌ Brak zdjęć w tym folderze (JPG, PNG, WEBP, HEIC...)';
+    } catch (err) {
+      infoEl.style.color = 'var(--danger)';
+      infoEl.textContent = '❌ ' + err.message;
+    }
+  }, 500);
+}
+
+async function createGallery() {
+  const name      = document.getElementById('gc-name').value.trim();
+  const sourceDir = document.getElementById('gc-source').value.trim();
+  const outputDir = document.getElementById('gc-output').value.trim();
+  const sessionId = document.getElementById('gc-session').value;
+
+  if (!name)      { alert('Podaj nazwę galerii.'); return; }
+  if (!sourceDir) { alert('Wskaż folder ze zdjęciami.'); return; }
+  if (!outputDir) { alert('Wskaż folder wyjściowy.'); return; }
+
+  const session     = sessionId ? state.sessions.find(s => s.id === sessionId) : null;
+  const sessionName = session?.name || '';
+
+  const btn      = document.getElementById('gc-create-btn');
+  const progWrap = document.getElementById('gc-progress');
+  const progBar  = document.getElementById('gc-progress-bar');
+  const progLbl  = document.getElementById('gc-progress-label');
+
+  btn.disabled = true;
+  progWrap.style.display = '';
+  progBar.style.width    = '20%';
+  progLbl.textContent    = 'Kopiowanie zdjęć i tworzenie galerii...';
+
+  try {
+    const res  = await fetch('/api/gallery/create', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sourceDir, outputDir, name, sessionName })
+    });
+    progBar.style.width = '80%';
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+
+    progBar.style.width = '100%';
+    progLbl.textContent = `✅ Galeria gotowa — ${data.count} zdjęć`;
+
+    // Scan for preview thumbnails
+    const scanRes  = await fetch('/api/gallery/scan?path=' + encodeURIComponent(outputDir + '/photos'));
+    const scanData = await scanRes.json();
+
+    const gallery = {
+      id:           uid(),
+      name,
+      sessionId:    sessionId || null,
+      sessionName,
+      outputDir,
+      photosDir:    outputDir + '/photos',
+      galleryFile:  data.galleryFile,
+      count:        data.count,
+      previewFiles: (scanData.images || []).slice(0, 5),
+      created:      new Date().toISOString(),
+    };
+    if (!state.galleries) state.galleries = [];
+    state.galleries.push(gallery);
+    saveState();
+    renderGalleries();
+
+    setTimeout(() => {
+      closeModal('gallery-create-modal');
+      if (confirm(`✅ Galeria "${name}" gotowa (${data.count} zdjęć).\n\nOtworzyć galerię w przeglądarce?`)) {
+        openGallery(gallery.id);
+      }
+    }, 600);
+  } catch (err) {
+    progBar.style.width = '100%';
+    progBar.style.background = 'var(--danger)';
+    progLbl.textContent = '❌ ' + err.message;
+    btn.disabled = false;
+  }
+}
+
+function openGallery(id) {
+  const g = (state.galleries || []).find(g => g.id === id);
+  if (!g) return;
+  // Open gallery.html via file path served through the server
+  fetch('/api/gallery/open', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ filePath: g.galleryFile })
+  }).catch(() => {});
+  window.open('/api/gallery/serve?path=' + encodeURIComponent(g.galleryFile), '_blank');
+}
+
+function copyGalleryPath(id) {
+  const g = (state.galleries || []).find(g => g.id === id);
+  if (!g) return;
+  navigator.clipboard.writeText(g.galleryFile).then(() => alert('✅ Ścieżka skopiowana:\n' + g.galleryFile));
+}
+
+function deleteGallery(id) {
+  const g = (state.galleries || []).find(g => g.id === id);
+  if (!g) return;
+  if (!confirm(`Usunąć galerię "${g.name}" z listy?\n\n(Pliki na dysku NIE zostaną usunięte)`)) return;
+  state.galleries = state.galleries.filter(g => g.id !== id);
+  saveState();
+  renderGalleries();
+}
+
+// ── Backup ─────────────────────────────────────────────────────────────
+let _backupTimer = null;
+
+async function backupNow(manual = false) {
+  const bp = state.backup?.path;
+  if (!bp) {
+    if (manual) alert('Ustaw ścieżkę kopii zapasowej w Ustawieniach.');
+    return;
+  }
+  try {
+    const res  = await fetch('/api/backup/create', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ backupPath: bp, data: state })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+    state.backup.lastBackup = new Date().toISOString();
+    saveState();
+    updateBackupStatusBar();
+    if (manual) alert('✅ Kopia zapasowa zapisana:\n' + data.file);
+  } catch (err) {
+    if (manual) alert('❌ Błąd kopii zapasowej:\n' + err.message);
+    console.error('Backup error:', err);
+  }
+}
+
+function scheduleBackup() {
+  if (_backupTimer) { clearInterval(_backupTimer); _backupTimer = null; }
+  const h = state.backup?.intervalHours;
+  if (!h || !state.backup?.autoEnabled || !state.backup?.path) return;
+  _backupTimer = setInterval(() => backupNow(false), h * 60 * 60 * 1000);
+}
+
+function updateBackupStatusBar() {
+  const bar   = document.getElementById('backup-status-bar');
+  const title = document.getElementById('backup-status-title');
+  const sub   = document.getElementById('backup-status-sub');
+  if (!bar) return;
+
+  const bp = state.backup?.path;
+  if (!bp) {
+    bar.className = 'backup-status warn';
+    title.textContent = 'Brak konfiguracji';
+    sub.textContent   = 'Ustaw ścieżkę poniżej';
+    return;
+  }
+
+  const last = state.backup?.lastBackup;
+  const lastStr = last
+    ? new Date(last).toLocaleString('pl-PL', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' })
+    : 'nigdy';
+
+  const auto = state.backup?.autoEnabled;
+  const h    = state.backup?.intervalHours;
+  const scheduleStr = auto && h
+    ? (h === 1 ? 'co godzinę' : h === 6 ? 'co 6 godzin' : h === 24 ? 'raz dziennie' : 'raz w tygodniu')
+    : 'wyłączony';
+
+  bar.className = 'backup-status ' + (last ? 'ok' : 'warn');
+  title.textContent = '📁 ' + bp;
+  sub.textContent   = `Ostatnia kopia: ${lastStr} · Harmonogram: ${scheduleStr}`;
+}
+
+function saveBackupSettings() {
+  const path = document.getElementById('backup-path-input')?.value.trim();
+  const h    = parseInt(document.getElementById('backup-interval-select')?.value) || 0;
+  const auto = document.getElementById('backup-auto-toggle')?.checked || false;
+  if (!state.backup) state.backup = {};
+  state.backup.path          = path;
+  state.backup.intervalHours = h;
+  state.backup.autoEnabled   = auto;
+  saveState();
+  scheduleBackup();
+  updateBackupStatusBar();
+  alert('✅ Ustawienia kopii zapasowej zapisane!');
+}
+
+function loadBackupSettingsUI() {
+  const b = state.backup || {};
+  const pathEl     = document.getElementById('backup-path-input');
+  const intervalEl = document.getElementById('backup-interval-select');
+  const autoEl     = document.getElementById('backup-auto-toggle');
+  if (pathEl)     pathEl.value     = b.path          || '';
+  if (intervalEl) intervalEl.value = String(b.intervalHours ?? 24);
+  if (autoEl)     autoEl.checked   = b.autoEnabled   || false;
+  updateBackupStatusBar();
+}
+
+async function loadBackupList() {
+  const bp = state.backup?.path;
+  const wrap = document.getElementById('backup-files-wrap');
+  const list = document.getElementById('backup-files-list');
+  if (!wrap || !list) return;
+  if (!bp) { wrap.style.display = 'none'; alert('Ustaw ścieżkę kopii zapasowej.'); return; }
+
+  wrap.style.display = 'block';
+  list.innerHTML = '<div class="empty" style="padding:12px"><p>Ładowanie...</p></div>';
+
+  try {
+    const res  = await fetch('/api/backup/list?path=' + encodeURIComponent(bp));
+    const data = await res.json();
+    if (!data.files.length) {
+      list.innerHTML = '<div class="empty" style="padding:12px"><p>Brak kopii w tym folderze.</p></div>';
+      return;
+    }
+    list.innerHTML = data.files.map(f => {
+      const dt   = f.mtime ? new Date(f.mtime).toLocaleString('pl-PL', { day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' }) : '—';
+      const size = f.size > 1024 ? Math.round(f.size / 1024) + ' KB' : f.size + ' B';
+      return `<div class="backup-file-item">
+        <span class="bf-name">📄 ${f.name}</span>
+        <span class="bf-meta">${size} · ${dt}</span>
+        <button class="btn btn-ghost btn-sm" onclick="restoreBackup('${escHtml(f.name)}')" title="Przywróć">↩️</button>
+      </div>`;
+    }).join('');
+  } catch (err) {
+    list.innerHTML = '<div class="empty" style="padding:12px"><p>❌ ' + escHtml(err.message) + '</p></div>';
+  }
+}
+
+async function restoreBackup(filename) {
+  if (!confirm(`Przywrócić kopię:\n${filename}\n\nZastąpi to WSZYSTKIE obecne dane!`)) return;
+  const bp = state.backup?.path;
+  try {
+    const res  = await fetch('/api/backup/restore', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ backupPath: bp, filename })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+    Object.assign(state, data.data);
+    saveState();
+    loadSettingsUI();
+    renderDashboard();
+    alert('✅ Dane przywrócone z kopii zapasowej.');
+  } catch (err) {
+    alert('❌ Błąd przywracania: ' + err.message);
+  }
+}
+
+// ── Restore Modal ──────────────────────────────────────────────────────
+let _restoreSelectedPath = null;
+let _restorePickerCurrent = null;
+
+async function openRestoreModal() {
+  _restoreSelectedPath = null;
+  document.getElementById('restore-confirm-btn').disabled = true;
+  document.getElementById('restore-selected-wrap').style.display = 'none';
+  switchRestoreTab('list');
+  openModal('restore-modal');
+  await loadRestoreList();
+  // Pre-load roots for browse tab
+  try {
+    const res  = await fetch('/api/fs/roots');
+    const data = await res.json();
+    document.getElementById('restore-picker-roots').innerHTML = data.roots.map(r =>
+      `<button class="dirpicker-root-btn" onclick="restorePickerBrowse('${escHtml(r.path)}')">${r.label}</button>`
+    ).join('');
+  } catch {}
+}
+
+function switchRestoreTab(tab) {
+  document.getElementById('restore-tab-list').classList.toggle('active', tab === 'list');
+  document.getElementById('restore-tab-browse').classList.toggle('active', tab === 'browse');
+  document.getElementById('restore-panel-list').style.display   = tab === 'list'   ? '' : 'none';
+  document.getElementById('restore-panel-browse').style.display = tab === 'browse' ? '' : 'none';
+  if (tab === 'browse' && !_restorePickerCurrent) {
+    restorePickerBrowse(state.backup?.path || null);
+  }
+}
+
+async function loadRestoreList() {
+  const listEl = document.getElementById('restore-backup-list');
+  const bp = state.backup?.path;
+  if (!bp) {
+    listEl.innerHTML = '<div class="dirpicker-loading">Brak skonfigurowanego folderu kopii.<br>Użyj zakładki „Wybierz z dysku".</div>';
+    return;
+  }
+  listEl.innerHTML = '<div class="dirpicker-loading">⏳ Ładowanie...</div>';
+  try {
+    const res  = await fetch('/api/backup/list?path=' + encodeURIComponent(bp));
+    const data = await res.json();
+    if (!data.files.length) {
+      listEl.innerHTML = '<div class="dirpicker-loading">Brak kopii zapasowych w folderze:<br>' + escHtml(bp) + '</div>';
+      return;
+    }
+    listEl.innerHTML = data.files.map(f => {
+      const dt   = f.mtime ? new Date(f.mtime).toLocaleString('pl-PL', { day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' }) : '—';
+      const size = f.size > 1024 ? Math.round(f.size / 1024) + ' KB' : f.size + ' B';
+      const fp   = bp.replace(/\/+$/, '') + '/' + f.name;
+      return `<div class="dirpicker-file-item" id="rfi-${escHtml(f.name)}" onclick="restoreSelectFile('${escHtml(fp)}', this)">
+        <span class="di-icon">📄</span>
+        <span class="df-name">${escHtml(f.name)}</span>
+        <span class="df-meta">${size} · ${dt}</span>
+      </div>`;
+    }).join('');
+  } catch (err) {
+    listEl.innerHTML = '<div class="dirpicker-loading">❌ ' + escHtml(err.message) + '</div>';
+  }
+}
+
+async function restorePickerBrowse(dirPath) {
+  const listEl = document.getElementById('restore-picker-list');
+  const crumbEl = document.getElementById('restore-picker-breadcrumb');
+  listEl.innerHTML = '<div class="dirpicker-loading">⏳ Ładowanie...</div>';
+  try {
+    const url  = '/api/fs/browse?files=1&path=' + (dirPath ? encodeURIComponent(dirPath) : '');
+    const res  = await fetch(url);
+    const data = await res.json();
+    if (data.error) { listEl.innerHTML = `<div class="dirpicker-loading">❌ ${escHtml(data.error)}</div>`; return; }
+
+    _restorePickerCurrent = data.current;
+    const parts = data.current.replace(/\\/g, '/').split('/').filter(Boolean);
+    crumbEl.innerHTML = (data.current.startsWith('/') ? '/' : '') +
+      parts.map((p, i) => i === parts.length - 1 ? `<strong>${escHtml(p)}</strong>` : escHtml(p)).join(' / ');
+
+    let html = '';
+    if (data.parent !== null) {
+      html += `<div class="dirpicker-item up" onclick="restorePickerBrowse('${escHtml(data.parent)}')">
+        <span class="di-icon">⬆️</span><span class="di-name">.. (poziom wyżej)</span>
+      </div>`;
+    }
+    html += (data.dirs || []).map(d =>
+      `<div class="dirpicker-item" onclick="restorePickerBrowse('${escHtml(d.path)}')">
+        <span class="di-icon">📁</span><span class="di-name">${escHtml(d.name)}</span>
+      </div>`
+    ).join('');
+    if ((data.files || []).length) {
+      html += `<div style="font-size:.7rem;color:var(--gold);padding:6px 12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px">Pliki kopii (.json)</div>`;
+      html += data.files.map(f => {
+        const dt   = f.mtime ? new Date(f.mtime).toLocaleString('pl-PL', { day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' }) : '—';
+        const size = f.size > 1024 ? Math.round(f.size / 1024) + ' KB' : f.size + ' B';
+        return `<div class="dirpicker-file-item" onclick="restoreSelectFile('${escHtml(f.path)}', this)">
+          <span class="di-icon">📄</span>
+          <span class="df-name">${escHtml(f.name)}</span>
+          <span class="df-meta">${size} · ${dt}</span>
+        </div>`;
+      }).join('');
+    } else if (!data.dirs.length) {
+      html += '<div class="dirpicker-loading" style="padding:12px">Brak plików kopii (.json) w tym folderze.</div>';
+    }
+    listEl.innerHTML = html;
+  } catch (err) {
+    listEl.innerHTML = `<div class="dirpicker-loading">❌ ${escHtml(err.message)}</div>`;
+  }
+}
+
+async function restoreSelectFile(filePath, rowEl) {
+  // Highlight selected row
+  document.querySelectorAll('.dirpicker-file-item.active').forEach(e => e.classList.remove('active'));
+  if (rowEl) rowEl.classList.add('active');
+
+  _restoreSelectedPath = filePath;
+  document.getElementById('restore-confirm-btn').disabled = true;
+  document.getElementById('restore-selected-wrap').style.display = 'none';
+
+  // Fetch file info + preview
+  try {
+    const res  = await fetch('/api/backup/restore-path', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ filePath })
+    });
+    const result = await res.json();
+    if (!res.ok) { alert('❌ ' + result.error); return; }
+
+    const meta = result.meta || {};
+    const d    = result.data || {};
+    const dt   = meta.mtime ? new Date(meta.mtime).toLocaleString('pl-PL', { weekday:'long', day:'numeric', month:'long', year:'numeric', hour:'2-digit', minute:'2-digit' }) : '—';
+    const size = meta.size > 1024 ? Math.round(meta.size / 1024) + ' KB' : (meta.size || 0) + ' B';
+
+    document.getElementById('ri-name').textContent     = meta.name || filePath;
+    document.getElementById('ri-date').textContent     = dt;
+    document.getElementById('ri-size').textContent     = size;
+    document.getElementById('ri-sessions').textContent = (d.sessions?.length ?? '—') + ' sesji';
+    document.getElementById('ri-contacts').textContent = (d.contacts?.length ?? '—') + ' kontaktów';
+
+    document.getElementById('restore-selected-wrap').style.display = '';
+    document.getElementById('restore-confirm-btn').disabled = false;
+
+    // Store data for confirm step
+    _restoreSelectedPath = filePath;
+    document.getElementById('restore-confirm-btn').dataset.cachedData = JSON.stringify(result.data);
+  } catch (err) {
+    alert('❌ Błąd wczytywania pliku: ' + err.message);
+  }
+}
+
+function restoreConfirm() {
+  if (!_restoreSelectedPath) return;
+  const name = document.getElementById('ri-name').textContent;
+  if (!confirm(`Przywrócić dane z kopii:\n"${name}"?\n\nWszystkie obecne dane zostaną ZASTĄPIONE. Tej operacji nie można cofnąć.`)) return;
+
+  try {
+    const cached = document.getElementById('restore-confirm-btn').dataset.cachedData;
+    if (!cached) throw new Error('Brak danych kopii.');
+    const imported = JSON.parse(cached);
+    Object.assign(state, imported);
+    saveState();
+    closeModal('restore-modal');
+    loadSettingsUI();
+    renderDashboard();
+    scheduleBackup();
+    alert('✅ Dane przywrócone pomyślnie z kopii:\n' + name);
+  } catch (err) {
+    alert('❌ Błąd przywracania: ' + err.message);
+  }
+}
+
+// ── Backup first-run setup ─────────────────────────────────────────────
+function showBackupSetupIfNeeded() {
+  if ((localStorage.getItem('foto_studio_accepted') === 'true' || localStorage.getItem('focusmaster_accepted') === 'true') && !state.backup?.path) {
+    document.getElementById('backup-setup-overlay').classList.add('open');
+  }
+}
+
+function saveBackupSetup() {
+  const path = document.getElementById('backup-setup-path').value.trim();
+  if (!path) { alert('Podaj ścieżkę folderu.'); return; }
+  const h = parseInt(document.getElementById('backup-setup-interval').value) || 0;
+  if (!state.backup) state.backup = {};
+  state.backup.path          = path;
+  state.backup.intervalHours = h;
+  state.backup.autoEnabled   = h > 0;
+  saveState();
+  document.getElementById('backup-setup-overlay').classList.remove('open');
+  scheduleBackup();
+  // wykonaj pierwszą kopię od razu
+  backupNow(false);
+  if (document.getElementById('backup-path-input')) loadBackupSettingsUI();
+}
+
+function skipBackupSetup() {
+  document.getElementById('backup-setup-overlay').classList.remove('open');
+}
+
+// ── Modal ──────────────────────────────────────────────────────────────
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', e => { if (e.target === overlay) closeModal(overlay.id); });
+});
+
+// ── Init ───────────────────────────────────────────────────────────────
+loadState();
+applyTheme();
+initCal();
+calInit('dep');
+calInit('event');
+updateApiStatus();
+loadSettingsUI();
+renderDashboard();
+restoreChat();
+scheduleBackup();
+showBackupSetupIfNeeded();
+
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
+</script>
+</body>
+</html>

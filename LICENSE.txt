@@ -1,0 +1,9 @@
+Foto-Studio 2.5 - Umowa Licencyjna (EULA)
+
+Autor: Marek Zettel
+
+1. Licencja jest wieczysta na jedną lokalną instancję oprogramowania.
+2. Autor nie ponosi odpowiedzialności za konfigurację komputera, dysków ani usług zewnętrznych Licencjobiorcy.
+3. Dane są przechowywane lokalnie w przeglądarce użytkownika oraz w kopiach zapasowych wskazanych przez użytkownika.
+4. Licencjobiorca konfiguruje własne klucze API dla funkcji AI oraz własne hasło aplikacji Gmail.
+5. Zabrania się odsprzedaży i modyfikacji kodu w celach dystrybucyjnych bez zgody autora.

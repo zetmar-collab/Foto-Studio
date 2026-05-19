@@ -1,0 +1,17 @@
+.venv/
+__pycache__/
+*.pyc
+
+build/
+dist/
+Foto-Studio.spec
+
+.playwright-mcp/
+.ruflo/
+foto-studio-check.png
+
+release/Foto-Studio-2.5/
+!release/Foto-Studio-2.5.zip
+
+.DS_Store
+Thumbs.db
